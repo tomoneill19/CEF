@@ -130,7 +130,7 @@ def rexec(defaultMode=False, copyExe=False):
 
     iprangeMin = int(input("\n[IPMIN]> "))
     iprangeMax = int(input("[IPMAX]> ")) + 1
-    if defaultMode == False:
+    if not defaultMode:
         uname = input("[UNAME]> ")
         pword = input("[PWORD]> ")
         cmnd = input("[COMND]> ")
@@ -159,7 +159,7 @@ def rexec(defaultMode=False, copyExe=False):
     print("\n[+] Done")
 
 
-def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False): #The actual function for executing a command so that it can be threaded
+def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False): # The actual function for executing a command so that it can be threaded
     global completeFlags
     global defaultCredIps
     ending = tgt
@@ -210,7 +210,7 @@ def rcpy(defaultMode=False):
     print("\n[+] Done")
 
 
-def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): #The actual function for executing a command so that it can be threaded
+def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): # The actual function for executing a command so that it can be threaded
     global completeFlags
     global defaultCredIps
     ending = tgt
