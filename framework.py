@@ -246,7 +246,7 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
     global ips
     ips = []
     for name in range(63):
-        ips.append(os.system(r"C:\Users\Admin\nbtscan-1.0.35.exe " + "\"" + str(name) + "\""))
+        ips.append(os.system(r"C:\Users\Admin\nbtscan " + "\"" + str(name) + "\""))
     os.system("cls")
     print("\n==================================================")
     print("\n[+] PRESCAN COMPLETE")
