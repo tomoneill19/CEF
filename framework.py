@@ -1,8 +1,9 @@
-#Everything you want in one place
+# Everything you want in one place
 
 import os
 import time
 import threading
+import socket
 
 screenlock = threading.Semaphore(value=1)
 
@@ -19,8 +20,8 @@ banner = '''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
-validCommands = ["scan", "credtest", "getcmd", "rexec", "rcpy", "msg", "include", "exclude"]
-validDesc = ["Run a ping scan to identify hosts on the network", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Remove an IP from the protected list", "Add an IP to the predicted list"]
+validCommands = ["scan", "scannames", "credtest", "getcmd", "rexec", "rcpy", "msg", "include", "exclude"]
+validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" ,"Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Remove an IP from the protected list", "Add an IP to the predicted list"]
 
 ips = []
 defaultCredIps = []
@@ -70,6 +71,9 @@ def menu():
 
         if cmd[0] == "scan":
             rscan()
+
+        if cmd[0] == "scannames":
+            rscannames()
 
         if cmd[0] == "hosts":
             print("\n[+] TARGETS " + str(ips).replace(" ", ""))
@@ -224,13 +228,26 @@ def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): # The 
     completeFlags[index] = 1
 
 
-def rscan(): # Conducts a ping scan to discover any hosts on the network
+def rscan():  # Conducts a ping scan to discover any hosts on the network
     global ips
     ips = []
     for i in range(100, 240):
         ip = "10.181.231." + str(i)
         if os.system("ping -n 1 -w 100 " + ip) == 0:
             ips.append(i)
+    os.system("cls")
+    print("\n==================================================")
+    print("\n[+] PRESCAN COMPLETE")
+    print("\n[+] DISCOVERED: " + str(len(ips)))
+    print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
+    print("\n==================================================\n")
+
+
+def rscannames():  # Conducts a scan of the netbios names to discover any hosts on the network
+    global ips
+    ips = []
+    for name in range(63):
+        ips.append(os.system(r"C:\Users\Admin\nbtscan-1.0.35.exe " + "\"" + str(name) + "\""))
     os.system("cls")
     print("\n==================================================")
     print("\n[+] PRESCAN COMPLETE")
