@@ -3,7 +3,6 @@
 import os
 import time
 import threading
-import socket
 
 screenlock = threading.Semaphore(value=1)
 
