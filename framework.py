@@ -89,7 +89,7 @@ testCrypto()
 
 def serverT():
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = "127.0.0.1"
+    host = "0.0.0.0" #FUCK YOU TCP YOU BASTARD
     port = 13370
     serverSock.bind((host, port))
     serverSock.listen(5)
