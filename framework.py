@@ -388,10 +388,11 @@ def getintel(host):
                 info = [info]
             for item in info:
                 if item not in returnIntel:
-                    if "No information available" not in item:
+                    if "No information" not in item:
                         updateIntel(host, item, False, suppress=True)
                         returnIntel.append(item)
                     print("|----[+] %s" % item)
+
 
         except:
             pass
