@@ -1,10 +1,16 @@
-import os
-import time
-import threading
-from threading import *
-import socket
-from Crypto.Cipher import AES
-import re
+try:
+    import os
+    import time
+    import sys
+    import threading
+    from threading import *
+    import socket
+    from Crypto.Cipher import AES
+    import re
+    import requests
+    import zipfile
+except ImportError as e:
+    sys.exit("You need: " + e.name + " -> Get it with pip install")
 
 banner = '''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
@@ -32,6 +38,10 @@ intel = {"10.181.231.165": ["What a legend"]}
 intelSources = []
 
 regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+
+root_path = r"C:\Users\Admin"
+psexec_path = root_path + r"\pstools\psexec"
+nbtscan_path = root_path + r"\nbtscan.exe"
 
 # CRYPTO INIT
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
@@ -64,6 +74,33 @@ def delIntelSource(source_IP):
                 file.write(i)
         file.truncate()
 
+
+def getDependencies():
+    if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path
+        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        if not input() == "n":
+            response = requests.get(r"https://download.sysinternals.com/files/PSTools.zip")
+            if response.ok:
+                print("Getting pstools dependency...")
+                file = open("pstools.zip", "wb+")  # write, binary, allow creation
+                file.write(response.content)
+                file.close()
+                with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
+                    zip_ref.extractall(psexec_path)
+                os.remove("pstools.zip")
+            else:
+                print("Failed to get PSExec dependency")
+    if not os.path.exists(nbtscan_path):
+        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        if not input() == "n":
+            response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
+            if response.ok:
+                print("Getting nbtscan dependency...")
+                file = open(nbtscan_path, "wb+")  # write, binary, allow creation
+                file.write(response.content)
+                file.close()
+            else:
+                print("Failed to get nbtscan dependency")
 
 def readData(filename, intswitch=False):
     f = open(filename, "r")
@@ -433,7 +470,7 @@ def getintel(host):
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
-    os.system(r"C:\Users\Admin\psexec\psexec -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))  #CHANGE TO WHEREVER PSEXEC IS
+    os.system(psexec_path + r"-nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))
 
 
 def credTest(creds="Profile:password", iplist="default"):
@@ -562,7 +599,7 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
     global customLists
     customLists[0] = []
     for name in range(63):
-        customLists[0].append(os.system(r"C:\Users\Admin\nbtscan " + "\"" + str(name) + "\""))
+        customLists[0].append(os.system(nbtscan_path + " \"" + str(name) + "\""))
     os.system("cls")
     print("\n==================================================")
     print("\n[+] NAME SCAN COMPLETE")
@@ -588,5 +625,6 @@ def rmsgT(reason="", target=""):
 
 x = threading.Thread(target=serverT)
 x.start()
+getDependencies()
 intelInit()
 menu()
