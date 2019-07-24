@@ -19,9 +19,9 @@ banner = '''
 validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel"]
 validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
-    "View intel on a given IP"
+    "View or edit intel on a given IP"
 ]
-validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip]"]
+validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])"]
 
 ipNames = []
 customLists = []
@@ -30,7 +30,7 @@ exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166,
 completeFlags = []
 
 intel = {"10.181.231.165": ["What a legend"]}
-intelSources = ["127.0.0.1", "10.181.231.165", "10.181.231.130"]  #DELETE YOUR IP FROM THIS
+intelSources = ["127.0.0.1", "10.181.231.165", "10.181.231.130", "10.181.231.139", "10.181.231.159"]  #DELETE YOUR IP FROM THIS
 
 #CRYPTO INIT, THESE GET CHANGED REGULARL
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
@@ -61,14 +61,18 @@ def readData(filename, intswitch=False):
     return totalRet
 
 
-def writeData(filename, data):
+def writeData(filename, data, writingList=True):
     os.remove(filename)
     f = open(filename, "a")
     for item in data:
         writeString = ""
         writeString += item[0]
-        for i in item[1]:
-            writeString += "|" + str(i)
+        if writingList:
+            for i in item[1]:
+                writeString += "|" + str(i)
+        else:
+            for i in item[1]:
+                writeString += "|" + str(i)
         writeString += "\n"
         f.write(writeString)
     f.close()
@@ -112,7 +116,6 @@ def intelWrite():
     global customLists
     global ipNames
     global intel
-    print(ipNames)
     ipInfo = []
     for x in range(0, len(ipNames)):
         ipInfo.append([ipNames[x], customLists[x]])
@@ -121,8 +124,8 @@ def intelWrite():
     intelInfo = []
     for key in intel:
         intelInfo.append([key, intel[key]])
-    writeData("intel.txt", intelInfo)
-
+    writeData("intel.txt", intelInfo, False)
+    print("\n[+] Intel updated")
 
 def AES_pad(data):
     if len(data) % 16 == 0:
@@ -229,6 +232,7 @@ class client(Thread):
 
 def makeRequest(ip, port, type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
     sock.connect((ip, port))
     packet = (type + "|" + subject + "|" + body).encode()
     sock.send(packet)
@@ -237,7 +241,7 @@ def makeRequest(ip, port, type, subject, body):
     return response
 
 
-def updateIntel(host, info, action="add"):
+def updateIntel(host, info, action="add", online=True):
     global intel
     if action == "add":
         if host in intel:
@@ -245,19 +249,23 @@ def updateIntel(host, info, action="add"):
                 intel[host].append(info)
         else:
             intel[host] = [info]
-
-        for comp in intelSources:
-            makeRequest(comp, 13370, "update", host, info)
+        if online:
+            for comp in intelSources:
+                makeRequest(comp, 13370, "update", host, info)
     if action == "remove":
         if host in intel:
             if info in intel[host]:
                 intel[host].remove(info)
-
-        for comp in intelSources:
-            makeRequest(comp, 13370, "remove", host, info)
-
+        if online:
+            for comp in intelSources:
+                makeRequest(comp, 13370, "remove", host, info)
+    intelWrite()
 
 def menu():
+    global intel
+    global customLists
+    global ipNames
+
     for line in banner:
         print(line, end="")
     print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
@@ -329,10 +337,10 @@ def menu():
 
         if cmd[0] == "remove":
             if len(cmd) == 3:
-                if cmd[1] in ipNames:
-                    targlist = customLists[ipNames.index(cmd[1])]
-                    if cmd[2] in targList:
-                        targList.remove(cmd[2])
+                if cmd[2] in ipNames:
+                    targList = customLists[ipNames.index(cmd[2])]
+                    if int(cmd[1]) in targList:
+                        customLists[ipNames.index(cmd[2])].remove(int(cmd[1]))
                 intelWrite()
 
         if cmd[0] == "add":
@@ -347,11 +355,22 @@ def menu():
                 intelWrite()
 
         if cmd[0] == "intel":
-            try:
+            if len(cmd) == 2:
+                try:
+                    host = cmd[1]
+                    getintel(host)
+                except:
+                    pass
+            if len(cmd) >= 3:
                 host = cmd[1]
-                getintel(host)
-            except:
-                pass
+                cmnd = cmd[2]
+                info = ""
+                for x in range(3, len(cmd)):
+                    info += cmd[x] + " "
+                if cmnd == "add":
+                    updateIntel(host, info, "add", False)
+                if cmnd == "remove":
+                    updateIntel(host, info, "remove", False)
 
 
 def getintel(host):
@@ -367,9 +386,9 @@ def getintel(host):
         info = info.split("|")
         for item in info:
             if item not in returnIntel:
+                updateIntel(host, item)
                 returnIntel.append(item)
                 print("|----[+] %s" % item)
-
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
