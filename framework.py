@@ -3,7 +3,7 @@ try:
     import time
     import sys
     import threading
-    from threading import *
+    from threading import Thread
     import socket
     from Crypto.Cipher import AES
     import re
@@ -12,7 +12,7 @@ try:
 except ImportError as e:
     sys.exit("You need: " + e.name + " -> Get it with pip install")
 
-banner = '''
+banner = r'''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
  /$$__  $$| $$_____/| $$_____/
 | $$  \__/| $$      | $$
@@ -22,12 +22,13 @@ banner = '''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
+
 validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "addsource", "delsource"]
 validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Add an ip address to the list of shared intel sources", "Delete an ip address from the list of shared intel sources"
 ]
-validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "addsource [IP]", "delsource [IP]"]
+validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "addsource [ip]", "delsource [ip]"]
 
 ipNames = []
 customLists = []
@@ -49,7 +50,7 @@ iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 
 # =============================================================================
 # =============================================================================
-# ======SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS=======
+# ===== SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS ======
 # =============================================================================
 # =============================================================================
 
@@ -62,7 +63,7 @@ def getIntelSources():  # Read from the intel_sources.txt file who we share info
 
 def addIntelSource(source_IP):
     with open("intel_sources.txt", "a") as file:
-        file.write("\n"+source_IP)
+        file.write("\n" + source_IP)
 
 
 def delIntelSource(source_IP):
@@ -74,33 +75,6 @@ def delIntelSource(source_IP):
                 file.write(i)
         file.truncate()
 
-
-def getDependencies():
-    if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path
-        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
-        if not input() == "n":
-            response = requests.get(r"https://download.sysinternals.com/files/PSTools.zip")
-            if response.ok:
-                print("Getting pstools dependency...")
-                file = open("pstools.zip", "wb+")  # write, binary, allow creation
-                file.write(response.content)
-                file.close()
-                with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
-                    zip_ref.extractall(psexec_path)
-                os.remove("pstools.zip")
-            else:
-                print("Failed to get PSExec dependency")
-    if not os.path.exists(nbtscan_path):
-        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
-        if not input() == "n":
-            response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
-            if response.ok:
-                print("Getting nbtscan dependency...")
-                file = open(nbtscan_path, "wb+")  # write, binary, allow creation
-                file.write(response.content)
-                file.close()
-            else:
-                print("Failed to get nbtscan dependency")
 
 def readData(filename, intswitch=False):
     f = open(filename, "r")
@@ -137,27 +111,14 @@ def writeData(filename, data, writingList=True):
     f.close()
 
 
-def checkFile(filename):
-    try:
-        f = open(filename, "r")
-        f.readlines()
-        f.close()
-        return 1
-    except:
-        f = open(filename, "w")
-        f.write("")
-        f.close()
-        return 0
-
-
 def intelInit():
     global customLists
     global ipNames
     global intel
 
     getIntelSources()
-    intelPresent = checkFile("intel.txt")
-    hostsPresent = checkFile("hosts.txt")
+    intelPresent = os.path.exists("intel.txt")
+    hostsPresent = os.path.exists("hosts.txt")
     if hostsPresent == False:
         ipNames.append("ips")
         customLists.append([])
@@ -187,6 +148,7 @@ def intelWrite(suppressMsg=False):
     writeData("intel.txt", intelInfo, False)
     if suppressMsg == False:
         print("\n[+] Intel updated")
+
 
 def AES_pad(data):
     if len(data) % 16 == 0:
@@ -221,13 +183,9 @@ def decryptAES(data):
     return AES_unpad(data).decode()
 
 
-def testCrypto():
-    msg = "Testing times two twice"
+def testCrypto(msg):
     code = encryptAES(msg)
-    decode1 = decryptAES(code)
-
-
-testCrypto()
+    return (decryptAES(code))
 
 
 def serverT():
@@ -240,13 +198,11 @@ def serverT():
         try:
             clientsocket, address = serverSock.accept()
             client(clientsocket, address)
-        except:
+        except socket.error:
             pass
 
 
 class client(Thread):
-    global players
-
     def __init__(self, socket, address):
         Thread.__init__(self)
         self.localPC = None
@@ -291,11 +247,11 @@ class client(Thread):
 #=============================================================================
 
 
-def makeRequest(ip, port, type, subject, body):
+def makeRequest(ip, port, _type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)
     sock.connect((ip, port))
-    packet = (type + "|" + subject + "|" + body).encode()
+    packet = (_type + "|" + subject + "|" + body).encode()
     sock.send(packet)
     response = decryptAES(sock.recv(1024))
     sock.close()
@@ -321,6 +277,7 @@ def updateIntel(host, info, action="add", online=True, suppress=False):
             for comp in intelSources:
                 makeRequest(comp, 13370, "remove", host, info)
     intelWrite(suppress)
+
 
 def menu():
     global intel
@@ -393,7 +350,7 @@ def menu():
         if cmd[0] == "credtest":
             try:
                 credTest(cmd[1], cmd[2])
-            except:
+            except Exception:
                 pass
 
         if cmd[0] == "remove":
@@ -420,7 +377,7 @@ def menu():
                 try:
                     host = cmd[1]
                     getintel(host)
-                except:
+                except Exception:
                     pass
             if len(cmd) >= 3:
                 host = cmd[1]
@@ -434,7 +391,7 @@ def menu():
                     updateIntel(host, info, "remove", False)
 
         if cmd[0] == "addsource":
-            if re.match(regex_ipv4,cmd[1]):
+            if re.match(regex_ipv4, cmd[1]):
                 addIntelSource(cmd[1])
             else:
                 print("Not a valid IP address")
@@ -464,9 +421,9 @@ def getintel(host):
                         returnIntel.append(item)
                     print("|----[+] %s" % item)
 
-
-        except:
+        except Exception:
             pass
+
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
@@ -532,13 +489,12 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
 
     ending = tgt
     tgt = "10.181.231." + str(tgt)
-    psexecString = r'C:\Users\Admin\psexec\psexec -nobanner \\%s -u %s -p %s cmd /k "%s && exit" 2> nul' % (tgt, uname, pword, cmd)
+    psexecString = psexec_path + r" -nobanner \\%s -u %s -p %s cmd /k '%s && exit' 2> nul" % (tgt, uname, pword, cmd)
     resp = os.system(psexecString)
     if sav and tgt not in customLists[listIndex]:
         infostring = "LOGIN: " + uname + ":" + pword
         if str(resp) == "0":
             customLists[listIndex].append(ending)
-
 
     completeFlags[index] = 1
 
@@ -552,7 +508,7 @@ def rcpy(targetList, payload, creds):
     index = 0
     for i in targetList:
         completeFlags.append(0)
-        x = threading.Thread(target=rcpyT, args=(i, uname, passowrd, payload, index, False))
+        x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index, False))
         x.start()
         time.sleep(.1)
         index += 1
@@ -561,15 +517,16 @@ def rcpy(targetList, payload, creds):
     print("\n[+] Done")
 
 
+# DEAD METHOD - TO BE FIXED
 def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
     if onDesktop == False:
-        psexecString = r'C:\Users\Admin\psexec\psexec -nobanner \\%s -u %s -p %s -c %s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
+        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
     else:
-        psexecString = r'C:\Users\Admin\psexec\psexec -nobanner \\%s -u %s -p %s -c "%s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
+        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c "%s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
     resp = os.system(psexecString)
     completeFlags[index] = 1
 
@@ -609,7 +566,6 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
 
 
 def rmsg(targets, reason, num):
-    maxThreads = 64
     print("")
     for t in range(0, num):
         for i in targets:
@@ -621,6 +577,34 @@ def rmsg(targets, reason, num):
 def rmsgT(reason="", target=""):
     print("[+] MESSAGING:", target)
     os.system(r'msg Admin /SERVER %s %s' % (target, reason))
+
+
+def getDependencies():
+    if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path
+        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        if not input() == "n":
+            response = requests.get(r"https://download.sysinternals.com/files/PSTools.zip")
+            if response.ok:
+                print("Getting pstools dependency...")
+                file = open("pstools.zip", "wb+")  # write, binary, allow creation
+                file.write(response.content)
+                file.close()
+                with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
+                    zip_ref.extractall(psexec_path)
+                os.remove("pstools.zip")
+            else:
+                print("Failed to get PSExec dependency")
+    if not os.path.exists(nbtscan_path):
+        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        if not input() == "n":
+            response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
+            if response.ok:
+                print("Getting nbtscan dependency...")
+                file = open(nbtscan_path, "wb+")  # write, binary, allow creation
+                file.write(response.content)
+                file.close()
+            else:
+                print("Failed to get nbtscan dependency")
 
 
 x = threading.Thread(target=serverT)
