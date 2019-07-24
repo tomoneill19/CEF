@@ -30,7 +30,7 @@ exclude = [165, 130, 139, 171, 178, 153, 151, 176, 179, 144, 160, 174, 175, 166,
 completeFlags = []
 
 intel = {"10.181.231.165": ["What a legend"]}
-intelSources = ["127.0.0.1", "10.181.231.165", "10.181.231.130", "10.181.231.139", "10.181.231.159"]  #DELETE YOUR IP FROM THIS
+intelSources = ["10.181.231.159","10.181.231.139", "10.181.231.165", "10.181.231.130"]  #DELETE YOUR IP FROM THIS
 
 #CRYPTO INIT, THESE GET CHANGED REGULARL
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
@@ -207,12 +207,12 @@ class client(Thread):
             if host in intel:
                 if info not in intel[host]:
                     intel[host].append(info)
-                    return "[+] Done"
+                    return ""
                 else:
-                    return "[!] Already exists"
+                    return ""
             else:
                 intel[host] = [info]
-                return "[+] Created record"
+                return ""
 
         if cmd[0] == "get":
             host = cmd[1]
@@ -220,7 +220,7 @@ class client(Thread):
             if host in intel:
                 return "|".join(intel[host])
             else:
-                return "No information available at this time"
+                return ""
 
 
 #=============================================================================
@@ -232,8 +232,9 @@ class client(Thread):
 
 def makeRequest(ip, port, type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
+    print("[DBG] TRYING TO CONNECT TO %s" % ip)
     sock.connect((ip, port))
+    print("[DBG] CONNECTED")
     packet = (type + "|" + subject + "|" + body).encode()
     sock.send(packet)
     response = decryptAES(sock.recv(1024))
@@ -383,12 +384,14 @@ def getintel(host):
             pass
     for comp in intelSources:
         info = makeRequest(comp, 13370, "get", host, "")
-        info = info.split("|")
-        for item in info:
-            if item not in returnIntel:
-                updateIntel(host, item)
-                returnIntel.append(item)
-                print("|----[+] %s" % item)
+        print(comp, info)
+        if len(info) > 1:
+            info = info.split("|")
+            for item in info:
+                if item not in returnIntel:
+                    updateIntel(host, item)
+                    returnIntel.append(item)
+                    print("|----[+] %s" % item)
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
