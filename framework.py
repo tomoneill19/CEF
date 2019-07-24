@@ -508,7 +508,7 @@ def rcpy(targetList, payload, creds):
     index = 0
     for i in targetList:
         completeFlags.append(0)
-        x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index, False))
+        x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index))
         x.start()
         time.sleep(.1)
         index += 1
@@ -518,15 +518,12 @@ def rcpy(targetList, payload, creds):
 
 
 # DEAD METHOD - TO BE FIXED
-def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False):  # The actual function for executing a command so that it can be threaded
+def rcpyT(tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
-    if onDesktop == False:
-        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
-    else:
-        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c "%s\%s"' % (tgt, uname, pword, PATH_TO_PAYLOADS, fname)
+    psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
     resp = os.system(psexecString)
     completeFlags[index] = 1
 
