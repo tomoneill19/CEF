@@ -112,7 +112,7 @@ def intelWrite():
     global customLists
     global ipNames
     global intel
-
+    print(ipNames)
     ipInfo = []
     for x in range(0, len(ipNames)):
         ipInfo.append([ipNames[x], customLists[x]])
@@ -473,7 +473,12 @@ def rcpyT(tgt=0, uname="", pword="", fname="", index=0, onDesktop=False):  # The
 
 def rscan():  # Conducts a ping scan to discover any hosts on the network
     global customLists
-    customLists[0] = []
+    if len(customLists) == 0:
+        customLists.append([])
+    if len(ipNames) == 0:
+        ipNames.append("ips")
+    else:
+        customLists[0] = []
     for i in range(100, 240):
         ip = "10.181.231." + str(i)
         if os.system("ping -n 1 -w 100 " + ip) == 0:
