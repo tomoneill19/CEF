@@ -112,20 +112,22 @@ def intelInit():
         intel[item[0]] = item[1]
 
 
-def intelWrite():
+def intelWrite(suppressMsg=False):
     global customLists
     global ipNames
     global intel
     ipInfo = []
     for x in range(0, len(ipNames)):
         ipInfo.append([ipNames[x], customLists[x]])
-    writeData("hosts.txt", ipInfo)
+    if suppressMsg == False:
+        writeData("hosts.txt", ipInfo)
 
     intelInfo = []
     for key in intel:
         intelInfo.append([key, intel[key]])
     writeData("intel.txt", intelInfo, False)
-    print("\n[+] Intel updated")
+    if suppressMsg == False:
+        print("\n[+] Intel updated")
 
 def AES_pad(data):
     if len(data) % 16 == 0:
@@ -207,12 +209,12 @@ class client(Thread):
             if host in intel:
                 if info not in intel[host]:
                     intel[host].append(info)
-                    return ""
+                    return "Done"
                 else:
-                    return ""
+                    return "Done"
             else:
                 intel[host] = [info]
-                return ""
+                return "Done"
 
         if cmd[0] == "get":
             host = cmd[1]
@@ -220,7 +222,7 @@ class client(Thread):
             if host in intel:
                 return "|".join(intel[host])
             else:
-                return ""
+                return "No information at this time"
 
 
 #=============================================================================
@@ -232,9 +234,8 @@ class client(Thread):
 
 def makeRequest(ip, port, type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("[DBG] TRYING TO CONNECT TO %s" % ip)
+    sock.settimeout(2)
     sock.connect((ip, port))
-    print("[DBG] CONNECTED")
     packet = (type + "|" + subject + "|" + body).encode()
     sock.send(packet)
     response = decryptAES(sock.recv(1024))
@@ -242,7 +243,7 @@ def makeRequest(ip, port, type, subject, body):
     return response
 
 
-def updateIntel(host, info, action="add", online=True):
+def updateIntel(host, info, action="add", online=True, suppress=False):
     global intel
     if action == "add":
         if host in intel:
@@ -260,7 +261,7 @@ def updateIntel(host, info, action="add", online=True):
         if online:
             for comp in intelSources:
                 makeRequest(comp, 13370, "remove", host, info)
-    intelWrite()
+    intelWrite(suppress)
 
 def menu():
     global intel
@@ -377,21 +378,23 @@ def menu():
 def getintel(host):
     returnIntel = []
     print("\n[!] Showing information for %s\n|" % host)
-    if host in intel:
-        for item in intel[host]:
-            returnIntel.append(item)
-            print("|----[+] %s" % item)
-            pass
     for comp in intelSources:
-        info = makeRequest(comp, 13370, "get", host, "")
-        print(comp, info)
-        if len(info) > 1:
-            info = info.split("|")
+        try:
+            info = makeRequest(comp, 13370, "get", host, "")
+            print("[+] Source: %s\n|" % comp)
+            if "|" in info:
+                info = info.split("|")
+            else:
+                info = [info]
             for item in info:
                 if item not in returnIntel:
-                    updateIntel(host, item)
-                    returnIntel.append(item)
+                    if "No information available" not in item:
+                        updateIntel(host, item, False, suppress=True)
+                        returnIntel.append(item)
                     print("|----[+] %s" % item)
+
+        except:
+            pass
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
