@@ -14,8 +14,8 @@ except ImportError as e:
         print("You need PyCrypto! Get it with : pip install pycryptodome")
     if e.name == "requests":
         print("You need Requests! Get it with : pip install requests")
-	else:
-		print(e)
+    else:
+        print(e)
     input()
     sys.exit(0)
 
@@ -387,6 +387,11 @@ def menu():
             rscannames()
 
         if cmd[0] == "hosts":
+            for x in range(0, len(ipNames)):
+                if len(customLists[x]) == 0:
+                    del customLists[x]
+                    del ipNames[x]
+                    intelWrite(suppressMsg=True)
             if len(cmd) == 1:
                 if len(customLists) > 0:
                     print("[!] Showing host information")
@@ -512,6 +517,9 @@ def credTest(creds="Profile:password", iplist="default"):
     for item in customLists[0]:
         if item not in customLists[listIndex]:
             updateIntel(item, loginString, action="remove", online=False, suppress=True)
+    if len(customLists[listIndex]) == 0:
+        del customLists[listIndex]
+        del ipNames[listIndex]
 
     intelWrite()
 
