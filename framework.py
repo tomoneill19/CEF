@@ -10,7 +10,12 @@ try:
     import requests
     import zipfile
 except ImportError as e:
-    sys.exit("You need: " + e.name + " -> Get it with pip install")
+    if e.name == "Crypto":
+        print("You need PyCrypto! Get it with : pip install pycryptodome")
+    if e.name == "Requests":
+        print("You need Requests! Get it with : pip install requests")
+    input()
+    sys.exit(0)
 
 banner = r'''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
@@ -117,11 +122,14 @@ def intelInit():
     global intel
 
     getIntelSources()
-    intelPresent = os.path.exists("intel.txt")
-    hostsPresent = os.path.exists("hosts.txt")
-    if hostsPresent == False:
-        ipNames.append("ips")
-        customLists.append([])
+
+    if not os.path.exists("intel.txt"):
+        with open("intel.txt", "w+") as file:
+            file.write("")
+
+    if not os.path.exists("hosts.txt"):
+        with open("hosts.txt", "w+") as file:
+            file.write("")
 
     ipInfo = readData("hosts.txt", True)
     for item in ipInfo:
@@ -240,11 +248,11 @@ class client(Thread):
                 return "No information at this time"
 
 
-#=============================================================================
-#=============================================================================
-#CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CFEF
-#=============================================================================
-#=============================================================================
+# =============================================================================
+# =============================================================================
+# === CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CFEF ===
+# =============================================================================
+# =============================================================================
 
 
 def makeRequest(ip, port, _type, subject, body):
