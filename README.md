@@ -9,10 +9,10 @@
 ## Program Dependencies
 * PSexec
     * https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
-    * `C:\Users\Admin\pstools\psexec`
+    * `C:\Users\Admin\pstools\psexec\psexec.exe`
 * NBTScan
     * http://www.unixwiz.net/tools/nbtscan.html
-    * `C:\Users\Admin\nbtscan`
+    * `C:\Users\Admin\nbtscan.exe`
     
 Can be manually placed in the above locations or downloaded automatically upon running the program
 
