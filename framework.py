@@ -138,6 +138,7 @@ def intelInit():
     intelInfo = readData("intel.txt")
     for item in intelInfo:
         intel[item[0]] = item[1]
+    updateHosts()
 
 
 def intelWrite(suppressMsg=False):
@@ -246,7 +247,7 @@ class client(Thread):
                     for x in range(0, len(customLists[i])):
                         retstring += "|" + str(customLists[i][x])
                     retstring += ","
-                return(retstring)
+                return(retstring[:-1])
             else:
                 host = cmd[1]
                 info = cmd[2]
@@ -265,7 +266,7 @@ class client(Thread):
 
 def makeRequest(ip, port, _type, subject, body):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(2)
+    sock.settimeout(1)
     sock.connect((ip, port))
     packet = (_type + "|" + subject + "|" + body).encode()
     sock.send(packet)
@@ -297,20 +298,37 @@ def updateIntel(host, info, action="add", online=True, suppress=False):
 def updateHosts():
     global ipNames
     global customLists
+    print("\n[+] Loading host lists from network...")
     for comp in intelSources:
-        print("requesting")
         try:
             remoteHosts = makeRequest(comp, 13370, "get", "ALLHOSTS", "")
-            print(remoteHosts)
+            lists = remoteHosts.split(",")
+            for list in lists:
+                split = list.split("|")
+                name = split[0]
+                ips = []
+                for x in range(1, len(split)):
+                    ips.append(int(split[x]))
+                if name in ipNames:
+                    index = ipNames.index(name)
+                    for ip in ips:
+                        if ip not in customLists[index]:
+                            customLists[index].append(ip)
+                    customLists[index].sort()
+                else:
+                    ipNames.append(name)
+                    customLists.append(ips)
         except:
             pass
+    intelWrite()
+    print("[+] Done")
 
 
 def menu():
     global intel
     global customLists
     global ipNames
-
+    os.system("cls")
     for line in banner:
         print(line, end="")
     print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
@@ -367,13 +385,16 @@ def menu():
             rscannames()
 
         if cmd[0] == "hosts":
-            if len(customLists) > 0:
-                print("[!] Showing host information")
-                print("|\n|__[+] TARGETS\n|  |\n|  |__" + str(customLists[0]).replace(" ", ""))
-                for i in range(1, len(ipNames)):
-                    print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
-            else:
-                print("\n[!] No hosts found, run scan to detect")
+            if len(cmd) == 1:
+                if len(customLists) > 0:
+                    print("[!] Showing host information")
+                    print("|\n|__[+] TARGETS\n|  |\n|  |__" + str(customLists[0]).replace(" ", ""))
+                    for i in range(1, len(ipNames)):
+                        print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
+                else:
+                    print("\n[!] No hosts found, scan or run 'hosts update' to pull off the network")
+            if len(cmd) == 2 and cmd[1] == "update":
+                updateHosts()
 
         if cmd[0] == "credtest":
             try:
