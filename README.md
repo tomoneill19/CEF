@@ -9,7 +9,7 @@
 ## Program Dependencies
 * PSexec
     * https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
-    * `C:\Users\Admin\pstools\psexec\psexec.exe`
+    * `C:\Users\Admin\pstools\psexec.exe`
 * NBTScan
     * http://www.unixwiz.net/tools/nbtscan.html
     * `C:\Users\Admin\nbtscan.exe`
@@ -22,3 +22,12 @@ Can be manually placed in the above locations or downloaded automatically upon r
 * Requests
 
 Get these with `pip install`
+
+## Upcoming features
+* Malware deployment
+  * Sourcecode supplied with the project
+  * Compiles with CSC at deployment time
+* Scalability
+  * Detect the user's root path for dependency installation
+* NetBIOS
+  * Scan outside of the user's home group with nbtscan
