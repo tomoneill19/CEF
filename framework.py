@@ -12,8 +12,10 @@ try:
 except ImportError as e:
     if e.name == "Crypto":
         print("You need PyCrypto! Get it with : pip install pycryptodome")
-    if e.name == "Requests":
+    if e.name == "requests":
         print("You need Requests! Get it with : pip install requests")
+	else:
+		print(e)
     input()
     sys.exit(0)
 
