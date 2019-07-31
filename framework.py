@@ -30,12 +30,12 @@ banner = r'''
  \______/ |________/|__/
                           '''
 
-validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "addsource", "delsource"]
+validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "source"]
 validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
-    "View or edit intel on a given IP", "Add an ip address to the list of shared intel sources", "Delete an ip address from the list of shared intel sources"
+    "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "addsource [ip]", "delsource [ip]"]
+validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -69,18 +69,24 @@ def getIntelSources():  # Read from the intel_sources.txt file who we share info
 
 
 def addIntelSource(source_IP):
-    with open("intel_sources.txt", "a") as file:
-        file.write("\n" + source_IP)
-
+    intelSources.append(source_IP)
+    writeIntelSources()
 
 def delIntelSource(source_IP):
-    with open("intel_sources.txt", "r+") as file:
-        d = file.readlines()
-        file.seek(0)
-        for i in d:
-            if i != source_IP:
-                file.write(i)
+    try:
+        intelSources.remove(source_IP)
+    except Exception:
+        print("Provided source not in the list")
+    writeIntelSources()
+
+
+def writeIntelSources():
+    with open("intel_sources.txt", "w") as file:
         file.truncate()
+        for i in range(len(intelSources)):
+            file.write(intelSources[i] + "\n")
+
+
 
 
 def readData(filename, intswitch=False):
@@ -446,17 +452,21 @@ def menu():
                 if cmnd == "remove":
                     updateIntel(host, info, "remove", False)
 
-        if cmd[0] == "addsource":
-            if re.match(regex_ipv4, cmd[1]):
-                addIntelSource(cmd[1])
-            else:
-                print("Not a valid IP address")
-
-        if cmd[0] == "delsource":
-            if re.match(regex_ipv4, cmd[1]):
-                delIntelSource(cmd[1])
-            else:
-                print("Not a valid IP address")
+        if cmd[0] == "source":
+            if cmd[1] == "add":
+                if re.match(regex_ipv4, cmd[2]):
+                    addIntelSource(cmd[2])
+                else:
+                    print("Not a valid IP address")
+            if cmd[1] == "del":
+                if re.match(regex_ipv4, cmd[2]):
+                    delIntelSource(cmd[2])
+                else:
+                    print("Not a valid IP address")
+            if cmd[1] == "list" or cmd[1] == "ls":
+                with open("intel_sources.txt", "r") as file:
+                    for line in file:
+                        print(line)
 
 
 def getintel(host):
