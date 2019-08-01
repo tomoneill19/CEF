@@ -9,6 +9,7 @@ try:
     import re
     import requests
     import zipfile
+    import winsound
 except ImportError as e:
     if e.name == "Crypto":
         print("You need PyCrypto! Get it with : pip install pycryptodome")
@@ -35,7 +36,7 @@ validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["-", "-", "-", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -61,6 +62,8 @@ iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 # =============================================================================
 # =============================================================================
 
+def beep():
+    winsound.Beep(1000, 250)
 
 def getIntelSources():  # Read from the intel_sources.txt file who we share info with
     with open("intel_sources.txt", "r") as file:
@@ -348,12 +351,14 @@ def menu():
             for i in range(0, len(validCommands)):
                 print("[+] " + validCommands[i] + " :: " + validDesc[i])
             print("\n[!] Type 'usage' for info on how to run the commands\n")
+            beep()
 
         if cmd[0] == "usage":
             print("\n[!] Usage is as follows:\n")
             for i in range(0, len(validCommands)):
                 print("[+] " + validCommands[i] + " :: " + validUsage[i])
             print("")
+            beep()
 
         if cmd[0] == "getcmd":
             rconnect(cmd[1], cmd[2], cmd[3])
@@ -371,6 +376,7 @@ def menu():
             for line in banner:
                 print(line, end="")
             print("\nCF EXPLOIT FRAMEWORK v0.2")
+            beep()
 
         if cmd[0] == "rexec":
             if len(cmd) == 4:
@@ -388,9 +394,11 @@ def menu():
 
         if cmd[0] == "scan":
             rscan()
+            beep()
 
         if cmd[0] == "scannames":
             rscannames()
+            beep()
 
         if cmd[0] == "hosts":
             for x in range(0, len(ipNames)):
@@ -398,6 +406,7 @@ def menu():
                     del customLists[x]
                     del ipNames[x]
                     intelWrite(suppressMsg=True)
+
             if len(cmd) == 1:
                 if len(customLists) > 0:
                     print("[!] Showing host information")
@@ -408,6 +417,7 @@ def menu():
                     print("\n[!] No hosts found, scan or run 'hosts update' to pull off the network")
             if len(cmd) == 2 and cmd[1] == "update":
                 updateHosts()
+            beep()
 
         if cmd[0] == "credtest":
             try:
@@ -422,6 +432,7 @@ def menu():
                     if int(cmd[1]) in targList:
                         customLists[ipNames.index(cmd[2])].remove(int(cmd[1]))
                 intelWrite()
+                beep()
 
         if cmd[0] == "add":
             if len(cmd) == 3:
@@ -433,12 +444,14 @@ def menu():
                     customLists.append([int(cmd[1])])
                     ipNames.append(cmd[2])
                 intelWrite()
+                beep()
 
         if cmd[0] == "intel":
             if len(cmd) == 2:
                 try:
                     host = cmd[1]
                     getintel(host)
+                    beep()
                 except Exception:
                     pass
             if len(cmd) >= 3:
@@ -451,6 +464,7 @@ def menu():
                     updateIntel(host, info, "add", False)
                 if cmnd == "remove":
                     updateIntel(host, info, "remove", False)
+                beep()
 
         if cmd[0] == "source":
             if cmd[1] == "add":
@@ -464,9 +478,11 @@ def menu():
                 else:
                     print("Not a valid IP address")
             if cmd[1] == "list" or cmd[1] == "ls":
+                print("[!] Showing intel sources")
                 with open("intel_sources.txt", "r") as file:
                     for line in file:
-                        print(line)
+                        print("|\n|__[+] %s" % line.replace("\n", ""))
+                        beep()
 
 
 def getintel(host):
