@@ -409,7 +409,7 @@ def menu():
 
             if len(cmd) == 1:
                 if len(customLists) > 0:
-                    print("[!] Showing host information")
+                    print("\n[!] Showing host information")
                     print("|\n|__[+] TARGETS\n|  |\n|  |__" + str(customLists[0]).replace(" ", ""))
                     for i in range(1, len(ipNames)):
                         print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
@@ -478,7 +478,7 @@ def menu():
                 else:
                     print("Not a valid IP address")
             if cmd[1] == "list" or cmd[1] == "ls":
-                print("[!] Showing intel sources")
+                print("\n[!] Showing intel sources")
                 with open("intel_sources.txt", "r") as file:
                     for line in file:
                         print("|\n|__[+] %s" % line.replace("\n", ""))
