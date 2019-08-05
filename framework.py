@@ -543,10 +543,10 @@ def credTest(creds="Profile:password", iplist="default"):
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
     loginString = "LOGIN: " + username + ":" + password
     for item in customLists[listIndex]:
-        updateIntel(item, loginString, online=False, suppress=True)
+        updateIntel("10.181.231." + str(item), loginString, action="add", online=False, suppress=True)
     for item in customLists[0]:
         if item not in customLists[listIndex]:
-            updateIntel(item, loginString, action="remove", online=False, suppress=True)
+            updateIntel("10.181.231." + str(item), loginString, action="remove", online=False, suppress=True)
     if len(customLists[listIndex]) == 0:
         del customLists[listIndex]
         del ipNames[listIndex]
