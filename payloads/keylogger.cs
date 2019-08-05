@@ -60,7 +60,6 @@ namespace winexplore
             {
                 buffer.Add("0");
             }
-            Console.WriteLine(buffer.Count);
             int last = -1;
 
             while (true)
@@ -150,7 +149,6 @@ namespace winexplore
                 }
 
                 string last10 = String.Join("", buffer.ToArray()).ToLower();
-                Console.WriteLine(last10);
                 foreach(string trig in triggers)
                 {
                     if(last10.Contains(trig))

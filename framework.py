@@ -387,11 +387,14 @@ def menu():
                 rexec(targList, command, creds)
 
         if cmd[0] == "rcpy":
-            if len(cmd) == 4:
+            if len(cmd) >= 4:
                 targList = customLists[ipNames.index(cmd[1])]
                 creds = cmd[2]
                 payload = cmd[3]
-                rcpy(targList, payload, creds)
+                if len(cmd) >= 5 and cmd[4] == "remote":
+                    rcpy(targList, payload, creds, True)
+                else:
+                    rcpy(targList, payload, creds)
 
         if cmd[0] == "scan":
             rscan()
@@ -584,7 +587,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
     completeFlags[index] = 1
 
 
-def rcpy(targetList, payload, creds):
+def rcpy(targetList, payload, creds, remote=False):
     global completeFlags
     global customLists
     completeFlags = []
@@ -592,28 +595,37 @@ def rcpy(targetList, payload, creds):
     password = creds.split(":")[1]
     index = 0
     if payload.endswith(".cs"):
-        payload_cmd = cs_path + " -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        payload_cmd = ""
+        if remote:
+            payload_cmd = cs_path + " -target:winexe -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        else:
+            payload_cmd = cs_path + " -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        payload = "payloads\\pl.exe"
         print(payload_cmd)
         os.system(payload_cmd)
-        os.remove("payloads/pl.exe")
     for i in targetList:
         completeFlags.append(0)
-        x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index))
+        x = threading.Thread(target=rcpyT, args=(remote, i, uname, password, payload, index))
         x.start()
         time.sleep(.1)
         index += 1
     while 0 in completeFlags:
         pass
     print("\n[+] Done")
+    os.remove("payloads/pl.exe")
 
 
-def rcpyT(tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
+def rcpyT(remote, tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
-    psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+    if remote:
+        psexecString = psexec_path + r' -nobanner \\%s -i -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+    else:
+        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
     resp = os.system(psexecString)
+    print(resp)
     completeFlags[index] = 1
 
 
