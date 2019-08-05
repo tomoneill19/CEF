@@ -36,7 +36,7 @@ validDesc = [
     "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -271,7 +271,7 @@ class client(Thread):
 
 # =============================================================================
 # =============================================================================
-# === CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CFEF ===
+# === CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CEF ===
 # =============================================================================
 # =============================================================================
 
