@@ -28,7 +28,7 @@ namespace thotpatrol
                     if (keystate != 0)
                     {
                         MessageBoxButtons buttons = MessageBoxButtons.YesNo;
-                        MessageBox.Show("BEGONE THOTTY NONCE", "THOT", buttons);
+                        MessageBox.Show("S A M P L E T E X T", "B O T T O M T E X T", buttons);
                         
                     }
                 }
