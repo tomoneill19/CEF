@@ -48,9 +48,9 @@ intelSources = []
 
 regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
-root_path = r"C:\Users\Admin"
-psexec_path = root_path + r"\pstools\psexec.exe"
-nbtscan_path = root_path + r"\nbtscan.exe"
+root_path = os.getcwd()
+psexec_path = root_path + r"\tools\psexec.exe"
+nbtscan_path = root_path + r"\tools\nbtscan.exe"
 cs_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 # CRYPTO INIT
@@ -652,7 +652,12 @@ def rscan():  # Conducts a ping scan to discover any hosts on the network
 
 def rscannames():  # Conducts a scan of the netbios names to discover any hosts on the network
     global customLists
-    customLists[0] = []
+    if len(customLists) == 0:
+        customLists.append([])
+    if len(ipNames) == 0:
+        ipNames.append("ips")
+    else:
+        customLists[0] = []
     for name in range(63):
         customLists[0].append(os.system(nbtscan_path + " \"" + str(name) + "\""))
     os.system("cls")
@@ -690,10 +695,12 @@ def getDependencies():
                 with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
                     zip_ref.extractall(root_path + r"\pstools")
                 os.remove("pstools.zip")
+                os.system("cd " + root_path + r"\pstools & " + 'for %i in (*) do if not "%~i" == "PsExec.exe" del "%~i"')
+                os.system("rename pstools tools")
             else:
                 print("Failed to get PSExec dependency")
     if not os.path.exists(nbtscan_path):
-        print("Do you want to install PSExec? (Required dependency) [Y/n]")
+        print("Do you want to install NetBios Scan? (Required dependency) [Y/n]")
         if not input() == "n":
             response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
             if response.ok:
@@ -719,4 +726,5 @@ x = threading.Thread(target=serverT)
 x.start()
 getDependencies()
 intelInit()
+time.sleep(1)
 menu()
