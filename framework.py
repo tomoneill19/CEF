@@ -31,12 +31,12 @@ banner = r'''
  \______/ |________/|__/
                           '''
 
-validCommands = ["scan", "scannames", "scanarp", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "source"]
+validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "source"]
 validDesc = [
-    "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "Run an arp scan to identify hosts on the network", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
+    "Run a scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["-", "-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["scan ([arp])", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -376,7 +376,7 @@ def menu():
             os.system("cls")
             for line in banner:
                 print(line, end="")
-            print("\nCF EXPLOIT FRAMEWORK v0.2")
+            print("\nCF EXPLOIT FRAMEWORK RC1")
             beep()
 
         if cmd[0] == "rexec":
@@ -397,15 +397,15 @@ def menu():
                     rcpy(targList, payload, creds)
 
         if cmd[0] == "scan":
-            rscan()
+            if len(cmd) == 2:
+                if cmd[1] == "arp":
+                    rscanarp()
+            else:
+                rscan()
             beep()
 
         if cmd[0] == "scannames":
             rscannames()
-            beep()
-
-        if cmd[0] == "scanarp":
-            rscanarp()
             beep()
 
         if cmd[0] == "hosts":
@@ -635,12 +635,19 @@ def rcpyT(remote, tgt=0, uname="", pword="", payload="", index=0):  # The actual
 
 def rscan():  # Conducts a ping scan to discover any hosts on the network
     global customLists
-    if len(customLists) == 0:
-        customLists.append([])
-    if len(ipNames) == 0:
-        ipNames.append("ips")
-    else:
-        customLists[0] = []
+    listIndex = 0
+    if len(customLists) > 0:
+        if ipNames[0] == "ips":
+            customLists[0] = []
+        else:
+            for x in range(0, len(ipNames)):
+                if ipNames[x] == "ips":
+                    del ipNames[x]
+                    del customLists[x]
+
+            ipNames.insert(0, "ips")
+            customLists.insert(0, [])
+
     for i in range(100, 240):
         ip = "10.181.231." + str(i)
         if os.system("ping -n 1 -w 100 " + ip) == 0:
@@ -674,25 +681,29 @@ def rscannames():  # Conducts a scan of the netbios names to discover any hosts 
 
 def rscanarp():  # Conducts an arp scan to discover any hosts on the network
     global customLists
-    if len(customLists) == 0:
-        customLists.append([])
-    if len(ipNames) == 0:
-        ipNames.append("ips")
-    else:
-        customLists[0] = []
+    listIndex = 0
+    if len(customLists) > 0:
+        if ipNames[0] == "ips":
+            customLists[0] = []
+        else:
+            for x in range(0, len(ipNames)):
+                if ipNames[x] == "ips":
+                    del ipNames[x]
+                    del customLists[x]
+
+            ipNames.insert(0, "ips")
+            customLists.insert(0, [])
+
     os.system("arp -a -n " + socket.gethostbyname(socket.gethostname()) + " > arp.txt")
     with open("arp.txt", "r") as file:
         for line in file:
             try:
                 temp = line.split(" ")
-                print(temp)
                 temp2 = temp[2].split(".")
-                print(temp2)
                 if "static" not in temp:
                     customLists[0].append(temp2[3])
             except IndexError:
                 pass
-    print(customLists[0])
     os.remove("arp.txt")
     os.system("cls")
     print("\n==================================================")
