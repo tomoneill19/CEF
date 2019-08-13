@@ -36,7 +36,7 @@ validDesc = [
     "Run a scan to identify hosts on the network", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["scan ([arp/names])", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["scan ([arp])", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -50,7 +50,6 @@ regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-
 
 root_path = os.getcwd()
 psexec_path = root_path + r"\tools\psexec.exe"
-nbtscan_path = root_path + r"\tools\nbtscan.exe"
 cs_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 # CRYPTO INIT
@@ -400,8 +399,6 @@ def menu():
             if len(cmd) == 2:
                 if cmd[1] == "arp":
                     rscanarp()
-                if cmd[1] == "names":
-                    rscannames()
             else:
                 rscan()
             beep()
@@ -654,19 +651,6 @@ def rscan():  # Conducts a ping scan to discover any hosts on the network
     scanComplete()
 
 
-def rscannames():  # Conducts a scan of the netbios names to discover any hosts on the network
-    global customLists
-    if len(customLists) == 0:
-        customLists.append([])
-    if len(ipNames) == 0:
-        ipNames.append("ips")
-    else:
-        customLists[0] = []
-    for name in range(63):
-        customLists[0].append(os.system(nbtscan_path + " \"" + str(name) + "\""))
-    scanComplete()
-
-
 def rscanarp():  # Conducts an arp scan to discover any hosts on the network
     global customLists
     listIndex = 0
@@ -740,17 +724,6 @@ def getDependencies():
                 os.system("rename pstools tools")
             else:
                 print("Failed to get PSExec dependency")
-    if not os.path.exists(nbtscan_path):
-        print("Do you want to install NetBios Scan? (Required dependency) [Y/n]")
-        if not input() == "n":
-            response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
-            if response.ok:
-                print("Getting nbtscan dependency...")
-                file = open(nbtscan_path, "wb+")  # write, binary, allow creation
-                file.write(response.content)
-                file.close()
-            else:
-                print("Failed to get nbtscan dependency")
     if not os.path.exists(cs_path):
         print("Do you want to install C# Compiler? (For payloads) [Y/n]")
         if not input() == "n":

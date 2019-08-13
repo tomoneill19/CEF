@@ -11,9 +11,6 @@
 * PSexec
     * https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
     * `C:\Users\Admin\pstools\psexec.exe`
-* NBTScan
-    * http://www.unixwiz.net/tools/nbtscan.html
-    * `C:\Users\Admin\nbtscan.exe`
 * .NET Framework
     * https://go.microsoft.com/fwlink/?linkid=2088517
     * `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`
@@ -29,7 +26,4 @@ Can be manually placed in the above locations or downloaded automatically upon r
 Get these with `pip install`
 
 ## Upcoming features
-* Scalability
-  * Detect the user's root path for dependency installation
-* NetBIOS
-  * Scan outside of the user's home group with nbtscan
+* Detect user's local network range rather than hard coded IPs
