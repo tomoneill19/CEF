@@ -10,6 +10,8 @@ try:
     import requests
     import zipfile
     import winsound
+    import tkinter
+    from tkinter import *
 except ImportError as e:
     if e.name == "Crypto":
         print("You need PyCrypto! Get it with : pip install pycryptodome")
@@ -31,12 +33,22 @@ banner = r'''
  \______/ |________/|__/
                           '''
 
-validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "source"]
+validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel",
+                 "source"]
 validDesc = [
-    "Run a ping scan to identify hosts on the network", "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
+    "Run a ping scan to identify hosts on the network",
+    "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device",
+    "Test to see if default creds work", "Open a shell on a remote system (user / pass)",
+    "Run a command on a single or a group of PCs (add default to use 'Default' list)",
+    "rexec but copy and execute a file from this system", "Message a single or group of computers",
+    "Add an IP to a list", "Remove an IP from a list",
     "View or edit intel on a given IP", "Edit the list of shared intel sources"
 ]
-validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]",
+              "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]",
+              "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]",
+              "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])",
+              "source [add/del/list] ([ip])"]
 
 ipNames = []
 customLists = []
@@ -57,6 +69,7 @@ cs_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 key = b'\xb4y\xbd\xa0\xf2,\x1f~\x03\xb3\xef<7\xc4\xca\xde'
 iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 
+
 # =============================================================================
 # =============================================================================
 # ===== SERVER SIDE - HANDLE INCOMING CONNECTIONS AND DEAL WITH REQUESTS ======
@@ -65,6 +78,7 @@ iv = b'C\xab\x8ef!C_\x13\xf5\xa2Z\xa0\xdaM\x19('
 
 def beep():
     winsound.Beep(1000, 250)
+
 
 def getIntelSources():  # Read from the intel_sources.txt file who we share info with
     with open("intel_sources.txt", "r") as file:
@@ -75,6 +89,7 @@ def getIntelSources():  # Read from the intel_sources.txt file who we share info
 def addIntelSource(source_IP):
     intelSources.append(source_IP)
     writeIntelSources()
+
 
 def delIntelSource(source_IP):
     try:
@@ -89,8 +104,6 @@ def writeIntelSources():
         file.truncate()
         for i in range(len(intelSources)):
             file.write(intelSources[i] + "\n")
-
-
 
 
 def readData(filename, intswitch=False):
@@ -259,7 +272,7 @@ class client(Thread):
                     for x in range(0, len(customLists[i])):
                         retstring += "|" + str(customLists[i][x])
                     retstring += ","
-                return(retstring[:-1])
+                return (retstring[:-1])
             else:
                 host = cmd[1]
                 info = cmd[2]
@@ -306,6 +319,7 @@ def updateIntel(host, info, action="add", online=True, suppress=False):
             for comp in intelSources:
                 makeRequest(comp, 13370, "remove", host, info)
     intelWrite(suppress)
+
 
 def updateHosts():
     global ipNames
@@ -500,7 +514,7 @@ def getintel(host):
             for item in info:
                 if item not in returnIntel:
                     if "No information" not in item:
-                        updateIntel(host, item, False, suppress=True)
+                        updateIntel(host, item, action="add", online=False, suppress=True)
                         returnIntel.append(item)
                     print("|  |\n|  |__[+] %s" % item)
         except Exception:
@@ -568,7 +582,8 @@ def rexec(targets, cmd, creds):
     print("\n[+] Done")
 
 
-def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0):  # The actual function for executing a command so that it can be threaded
+def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False,
+           listIndex=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     global customLists
 
@@ -603,7 +618,8 @@ def rcpy(targetList, payload, creds):
 
 
 # DEAD METHOD - TO BE FIXED
-def rcpyT(tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
+def rcpyT(tgt=0, uname="", pword="", payload="",
+          index=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
@@ -703,4 +719,32 @@ x = threading.Thread(target=serverT)
 x.start()
 getDependencies()
 intelInit()
-menu()
+# menu()
+
+window = tkinter.Tk()
+window.title("GUI")
+
+
+# creating a function called say_hi()
+def say_hi():
+    getintel("8.8.8.8")
+    tkinter.Label(window, text=intel).pack()
+
+
+tkinter.Button(window, text="Give me the intel",
+               command=say_hi).pack()  # 'command' is executed when you click the button
+
+Lb1 = Listbox(window)
+Lb1.ColumnCount = 3
+Lb1.AddItem
+
+# Lb1.insert(1, "Python")
+# Lb1.insert(2, "Perl")
+# Lb1.insert(3, "C")
+# Lb1.insert(4, "PHP")
+# Lb1.insert(5, "JSP")
+# Lb1.insert(6, "Ruby")
+
+Lb1.pack()
+
+window.mainloop()
