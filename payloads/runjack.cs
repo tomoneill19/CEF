@@ -46,7 +46,7 @@ namespace cs19
         }
         static void Main(string[] args)
         {
-            if (System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName.Contains("cs19.exe") && false)
+            if (System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName.Contains("cs19.exe"))
             {
                 initialise();
             }

@@ -31,12 +31,11 @@ banner = r'''
  \______/ |________/|__/
                           '''
 
-validCommands = ["scan", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel", "source"]
+validCommands = ["scan", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "intel", "source", "exfil"]
 validDesc = [
-    "Run a scan to identify hosts on the network", "List all hosts stored on this device", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "Add an IP to a list", "Remove an IP from a list",
-    "View or edit intel on a given IP", "Edit the list of shared intel sources"
+    "Run a scan to identify hosts on the network", "View or edit host information", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "View or edit intel on a given IP", "Edit the list of shared intel ", "Exfiltrate data from a remote host"
 ]
-validUsage = ["scan ([arp])", "hosts ([update])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "add [ip] [list]", "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])"]
+validUsage = ["scan ([arp])", "hosts (update) (add/remove [ip] [list])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])", "exfil [ip] ([path])"]
 
 ipNames = []
 customLists = []
@@ -409,7 +408,6 @@ def menu():
                     del customLists[x]
                     del ipNames[x]
                     intelWrite(suppressMsg=True)
-
             if len(cmd) == 1:
                 if len(customLists) > 0:
                     print("\n[!] Showing host information")
@@ -418,8 +416,30 @@ def menu():
                         print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
                 else:
                     print("\n[!] No hosts found, scan or run 'hosts update' to pull off the network")
-            if len(cmd) == 2 and cmd[1] == "update":
-                updateHosts()
+            if len(cmd) == 2:
+                if cmd[1] == "update":
+                    updateHosts()
+            if len(cmd) == 4:
+                if cmd[1] == "remove":
+                    if len(cmd) == 4:
+                        if cmd[3] in ipNames:
+                            targList = customLists[ipNames.index(cmd[3])]
+                            if int(cmd[2]) in targList:
+                                customLists[ipNames.index(cmd[3])].remove(int(cmd[2]))
+                        intelWrite()
+                        beep()
+
+                if cmd[1] == "add":
+                    if len(cmd) == 4:
+                        if cmd[3] in ipNames:
+                            targlist = customLists[ipNames.index(cmd[3])]
+                            if cmd[3] not in targlist:
+                                targlist.append(int(cmd[2]))
+                        else:
+                            customLists.append([int(cmd[2])])
+                            ipNames.append(cmd[3])
+                        intelWrite()
+                        beep()
             beep()
 
         if cmd[0] == "credtest":
@@ -427,27 +447,6 @@ def menu():
                 credTest(cmd[1], cmd[2])
             except Exception:
                 pass
-
-        if cmd[0] == "remove":
-            if len(cmd) == 3:
-                if cmd[2] in ipNames:
-                    targList = customLists[ipNames.index(cmd[2])]
-                    if int(cmd[1]) in targList:
-                        customLists[ipNames.index(cmd[2])].remove(int(cmd[1]))
-                intelWrite()
-                beep()
-
-        if cmd[0] == "add":
-            if len(cmd) == 3:
-                if cmd[2] in ipNames:
-                    targlist = customLists[ipNames.index(cmd[2])]
-                    if cmd[2] not in targlist:
-                        targlist.append(int(cmd[1]))
-                else:
-                    customLists.append([int(cmd[1])])
-                    ipNames.append(cmd[2])
-                intelWrite()
-                beep()
 
         if cmd[0] == "intel":
             if len(cmd) == 2:
@@ -486,6 +485,8 @@ def menu():
                     for line in file:
                         print("|\n|__[+] %s" % line.replace("\n", ""))
                         beep()
+        if cmd[0] == "exfil":
+            print("WIP: Exfiltrate data...")
 
 
 def getintel(host):
