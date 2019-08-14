@@ -736,9 +736,10 @@ def getDependencies():
                 print("Failed to get csc dependency")
 
 
-x = threading.Thread(target=serverT)
-x.start()
-getDependencies()
-intelInit()
-time.sleep(1)
-menu()
+if __name__ == "__main__":
+    x = threading.Thread(target=serverT)
+    x.start()
+    getDependencies()
+    intelInit()
+    time.sleep(1)
+    menu()
