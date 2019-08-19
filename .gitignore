@@ -112,3 +112,6 @@ intel.txt
 
 # tools binaries
 /tools
+
+# exfil'd data
+/exfil
