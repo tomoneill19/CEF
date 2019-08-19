@@ -20,7 +20,8 @@ except ImportError as e:
     input()
     sys.exit(0)
 
-banner = r'''
+VERSION = "CF EXPLOIT FRAMEWORK RC1"
+BANNER = r'''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
  /$$__  $$| $$_____/| $$_____/
 | $$  \__/| $$      | $$
@@ -36,8 +37,8 @@ validCommands = {
     "credtest": ["Test to see if default creds work", "credtest (username:password) (output_list)"],
     "getcmd": ["Open a shell on a remote system", "getcmd (ip) (username:password)"],
     "rexec": ["Run a command on a single or a group of PCs", "rexec (list_name) (username:password) (command)"],
-    "rcpy": ["rexec but copy and execute a file from this system", "rcpy (list name) (username:password) (payload name) [remote]"],
-    "msg": ["Message a single or group of computers", "msg (list name) (count) (message...)"],
+    "rcpy": ["rexec but copy and execute a file from this system", "rcpy (list_name) (username:password) (payload_name) [remote]"],
+    "msg": ["Message a single or group of computers", "msg (list_name) (count) (message...)"],
     "intel": ["View or edit intel on a given IP", "intel (ip) [{add | remove} [intel_to_add]"],
     "source": ["View or edit the list of shared intel sources", "source {{add | del} (ip) | list}"],
     "exfil": ["Exfiltrate data from a remote host", "exfil (target) (username:password)"]
@@ -345,8 +346,9 @@ def menu():
     global customLists
     global ipNames
     os.system("cls")
-    for line in banner:
+    for line in BANNER:
         print(line, end="")
+    print("\n" + VERSION)
     print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
 
     while True:
@@ -379,9 +381,9 @@ def menu():
 
         if cmd[0] == "clear":
             os.system("cls")
-            for line in banner:
+            for line in BANNER:
                 print(line, end="")
-            print("\nCF EXPLOIT FRAMEWORK RC1")
+            print("\n" + VERSION)
             beep()
 
         if cmd[0] == "rexec":
