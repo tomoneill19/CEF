@@ -12,6 +12,8 @@ try:
     import winsound
     import tkinter
     from tkinter import *
+    from tkinter import ttk
+    from tkinter import Entry
 except ImportError as e:
     if e.name == "Crypto":
         print("You need PyCrypto! Get it with : pip install pycryptodome")
@@ -719,32 +721,34 @@ x = threading.Thread(target=serverT)
 x.start()
 getDependencies()
 intelInit()
-# menu()
 
-window = tkinter.Tk()
-window.title("GUI")
+gui_cli=input("Do you want to use the GUI Y/N")
+if gui_cli=="N":
+    print("Hello")
+    menu()
+else:
+    window = tkinter.Tk()
+    window.title("CyberFirst Toolkit")
+
+    tree = ttk.Treeview(window)
+    tree["columns"] = ("one")
+    tree.column("one", width=1000)
+
+    tree.heading("one", text="Intel")
+    def say_hi():
+        index=0
+        tree.delete(*tree.get_children())
+        getintel(entry1.get())
+        for (k,v) in intel.items():
+            print (str(k)+str(v))
+            tree.insert("",index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
+            index+=1
+    tree.pack()
+
+    entry1 = tkinter.Entry(window)
+    entry1.pack()
+    tkinter.Button(window, text="Give me the intel",
+                   command=say_hi).pack()  # 'command' is executed when you click the button
 
 
-# creating a function called say_hi()
-def say_hi():
-    getintel("8.8.8.8")
-    tkinter.Label(window, text=intel).pack()
-
-
-tkinter.Button(window, text="Give me the intel",
-               command=say_hi).pack()  # 'command' is executed when you click the button
-
-Lb1 = Listbox(window)
-Lb1.ColumnCount = 3
-Lb1.AddItem
-
-# Lb1.insert(1, "Python")
-# Lb1.insert(2, "Perl")
-# Lb1.insert(3, "C")
-# Lb1.insert(4, "PHP")
-# Lb1.insert(5, "JSP")
-# Lb1.insert(6, "Ruby")
-
-Lb1.pack()
-
-window.mainloop()
+    window.mainloop()
