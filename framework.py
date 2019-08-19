@@ -30,12 +30,19 @@ banner = r'''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
+validCommands = {
+    "scan": ["Run a scan to identify hosts on the network","scan ([arp])"],
+    "hosts": ["View or edit host information","hosts (update) (add/remove [ip] [list])"],
+    "credtest": ["Test to see if default creds work","credtest [username:password] [list name to save under]"],
+    "getcmd": ["Open a shell on a remote system (user / pass)","getcmd [ip] [username] [password]"],
+    "rexec": ["Run a command on a single or a group of PCs (add default to use 'Default' list)","rexec [list name] [username:password] [command]"],
+    "rcpy": ["rexec but copy and execute a file from this system","rcpy [list name] [username:password] [payload name] ([remote])"],
+    "msg": ["Message a single or group of computers","msg [list name] [num times] "],
+    "intel": ["View or edit intel on a given IP","intel [ip] ([add/remove] [information to add/remove])"],
+    "source": ["Edit the list of shared intel","source [add/del/list] ([ip])"],
+    "exfil": ["Exfiltrate data from a remote host","exfil [target] [username:password]"]
 
-validCommands = ["scan", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "intel", "source", "exfil"]
-validDesc = [
-    "Run a scan to identify hosts on the network", "View or edit host information", "Test to see if default creds work", "Open a shell on a remote system (user / pass)", "Run a command on a single or a group of PCs (add default to use 'Default' list)", "rexec but copy and execute a file from this system", "Message a single or group of computers", "View or edit intel on a given IP", "Edit the list of shared intel ", "Exfiltrate data from a remote host"
-]
-validUsage = ["scan ([arp])", "hosts (update) (add/remove [ip] [list])", "credtest [username:password] [list name to save under]", "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]", "rcpy [list name] [username:password] [payload name] ([remote])", "msg [list name] [num times] ", "intel [ip] ([add/remove] [information to add/remove])", "source [add/del/list] ([ip])", "exfil [target] [username:password]"]
+}
 
 ipNames = []
 customLists = []
@@ -347,15 +354,15 @@ def menu():
         cmd = input("\n> ").split(" ")
         if cmd[0] == "help":
             print("\n[!] Available commands are:\n")
-            for i in range(0, len(validCommands)):
-                print("[+] " + validCommands[i] + " :: " + validDesc[i])
+            for command in validCommands:
+                print("%s :: %s" % (command, validCommands[command][0]))
             print("\n[!] Type 'usage' for info on how to run the commands\n")
             beep()
 
         if cmd[0] == "usage":
             print("\n[!] Usage is as follows:\n")
-            for i in range(0, len(validCommands)):
-                print("[+] " + validCommands[i] + " :: " + validUsage[i])
+            for command in validCommands:
+                print("%s :: %s" % (command, validCommands[command][1]))
             print("")
             beep()
 
