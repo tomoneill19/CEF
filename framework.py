@@ -31,17 +31,16 @@ banner = r'''
  \______/ |________/|__/
                           '''
 validCommands = {
-    "scan": ["Run a scan to identify hosts on the network","scan ([arp])"],
-    "hosts": ["View or edit host information","hosts (update) (add/remove [ip] [list])"],
-    "credtest": ["Test to see if default creds work","credtest [username:password] [list name to save under]"],
-    "getcmd": ["Open a shell on a remote system (user / pass)","getcmd [ip] [username] [password]"],
-    "rexec": ["Run a command on a single or a group of PCs (add default to use 'Default' list)","rexec [list name] [username:password] [command]"],
-    "rcpy": ["rexec but copy and execute a file from this system","rcpy [list name] [username:password] [payload name] ([remote])"],
-    "msg": ["Message a single or group of computers","msg [list name] [num times] "],
-    "intel": ["View or edit intel on a given IP","intel [ip] ([add/remove] [information to add/remove])"],
-    "source": ["Edit the list of shared intel","source [add/del/list] ([ip])"],
-    "exfil": ["Exfiltrate data from a remote host","exfil [target] [username:password]"]
-
+    "scan": ["Run a scan to identify hosts on the network", "scan [arp]"],
+    "hosts": ["View or edit host information", "hosts [{update} | {{add | remove} (ip)}]"],
+    "credtest": ["Test to see if default creds work", "credtest (username:password) (output_list)"],
+    "getcmd": ["Open a shell on a remote system", "getcmd (ip) (username:password)"],
+    "rexec": ["Run a command on a single or a group of PCs", "rexec (list_name) (username:password) (command)"],
+    "rcpy": ["rexec but copy and execute a file from this system", "rcpy (list name) (username:password) (payload name) [remote]"],
+    "msg": ["Message a single or group of computers", "msg (list name) (count) (message...)"],
+    "intel": ["View or edit intel on a given IP", "intel (ip) [{add | remove} [intel_to_add]"],
+    "source": ["View or edit the list of shared intel sources", "source {{add | del} (ip) | list}"],
+    "exfil": ["Exfiltrate data from a remote host", "exfil (target) (username:password)"]
 }
 
 ipNames = []
@@ -367,7 +366,8 @@ def menu():
             beep()
 
         if cmd[0] == "getcmd":
-            rconnect(cmd[1], cmd[2], cmd[3])
+            creds = cmd[2].split(":")
+            rconnect(cmd[1], creds[0], creds[1])
 
         if cmd[0] == "msg":
             targList = customLists[ipNames.index(cmd[1])]
