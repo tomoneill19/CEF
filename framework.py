@@ -769,27 +769,28 @@ if __name__ == "__main__":
     getDependencies()
     intelInit()
     time.sleep(1)
-    gui_cli=input("Do you want to use the GUI Y/N")
-    if gui_cli=="N":
-        print("Hello")
+    gui_cli = input("Do you want to use the GUI (y/N)\n")
+    if not gui_cli == "y":
         menu()
     else:
         window = tkinter.Tk()
         window.title("CyberFirst Toolkit")
 
         tree = ttk.Treeview(window)
-        tree["columns"] = ("one")
+        tree["columns"] = "one"
         tree.column("one", width=1000)
 
         tree.heading("one", text="Intel")
+
+
         def say_hi():
             index=0
             tree.delete(*tree.get_children())
             getintel(entry1.get())
-            for (k,v) in intel.items():
-                print (str(k)+str(v))
-                tree.insert("",index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
-                index+=1
+            for (k, v) in intel.items():
+                print(str(k)+str(v))
+                tree.insert("", index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
+                index += 1
         tree.pack()
 
         entry1 = tkinter.Entry(window)
