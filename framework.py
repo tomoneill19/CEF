@@ -498,6 +498,8 @@ def menu():
                 exfil(cmd[1], "C$\\ProgramData\\Microsoft\\Windows",creds[0], creds[1])
             else:
                 print("Incorrect usage: see \"help\" command")
+        if cmd[0] == "gui":
+            guimenu()
 
 
 def getintel(host):
@@ -763,6 +765,33 @@ def getDependencies():
                 print("Failed to get csc dependency")
 
 
+def guimenu():
+    window = tkinter.Tk()
+    window.title("CyberFirst Toolkit")
+
+    tree = ttk.Treeview(window)
+    tree["columns"] = "one"
+    tree.column("one", width=1000)
+
+    tree.heading("one", text="Intel")
+
+    def buttonpress():
+        index = 0
+        tree.delete(*tree.get_children())
+        getintel(entry1.get())
+        for (k, v) in intel.items():
+            print(str(k)+str(v))
+            tree.insert("", index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
+            index += 1
+    tree.pack()
+
+    entry1 = tkinter.Entry(window)
+    entry1.pack()
+    tkinter.Button(window, text="Give me the intel",
+                   command=buttonpress).pack()  # 'command' is executed when you click the button
+    window.mainloop()
+
+
 if __name__ == "__main__":
     x = threading.Thread(target=serverT)
     x.start()
@@ -773,30 +802,6 @@ if __name__ == "__main__":
     if not gui_cli == "y":
         menu()
     else:
-        window = tkinter.Tk()
-        window.title("CyberFirst Toolkit")
-
-        tree = ttk.Treeview(window)
-        tree["columns"] = "one"
-        tree.column("one", width=1000)
-
-        tree.heading("one", text="Intel")
+        guimenu()
 
 
-        def say_hi():
-            index=0
-            tree.delete(*tree.get_children())
-            getintel(entry1.get())
-            for (k, v) in intel.items():
-                print(str(k)+str(v))
-                tree.insert("", index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
-                index += 1
-        tree.pack()
-
-        entry1 = tkinter.Entry(window)
-        entry1.pack()
-        tkinter.Button(window, text="Give me the intel",
-                       command=say_hi).pack()  # 'command' is executed when you click the button
-
-
-        window.mainloop()
