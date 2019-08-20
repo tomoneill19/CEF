@@ -769,35 +769,33 @@ if __name__ == "__main__":
     getDependencies()
     intelInit()
     time.sleep(1)
-    menu()
+    gui_cli=input("Do you want to use the GUI Y/N")
+    if gui_cli=="N":
+        print("Hello")
+        menu()
+    else:
+        window = tkinter.Tk()
+        window.title("CyberFirst Toolkit")
 
-gui_cli=input("Do you want to use the GUI Y/N")
-if gui_cli=="N":
-    print("Hello")
-    menu()
-else:
-    window = tkinter.Tk()
-    window.title("CyberFirst Toolkit")
+        tree = ttk.Treeview(window)
+        tree["columns"] = ("one")
+        tree.column("one", width=1000)
 
-    tree = ttk.Treeview(window)
-    tree["columns"] = ("one")
-    tree.column("one", width=1000)
+        tree.heading("one", text="Intel")
+        def say_hi():
+            index=0
+            tree.delete(*tree.get_children())
+            getintel(entry1.get())
+            for (k,v) in intel.items():
+                print (str(k)+str(v))
+                tree.insert("",index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
+                index+=1
+        tree.pack()
 
-    tree.heading("one", text="Intel")
-    def say_hi():
-        index=0
-        tree.delete(*tree.get_children())
-        getintel(entry1.get())
-        for (k,v) in intel.items():
-            print (str(k)+str(v))
-            tree.insert("",index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
-            index+=1
-    tree.pack()
-
-    entry1 = tkinter.Entry(window)
-    entry1.pack()
-    tkinter.Button(window, text="Give me the intel",
-                   command=say_hi).pack()  # 'command' is executed when you click the button
+        entry1 = tkinter.Entry(window)
+        entry1.pack()
+        tkinter.Button(window, text="Give me the intel",
+                       command=say_hi).pack()  # 'command' is executed when you click the button
 
 
-    window.mainloop()
+        window.mainloop()
