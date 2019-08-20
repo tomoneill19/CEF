@@ -771,7 +771,8 @@ def guimenu():
 
     tree = ttk.Treeview(window)
     tree["columns"] = "one"
-    tree.column("one", width=1000)
+    # tree.column("one", width=1000)
+    tree.column("one")
 
     tree.heading("one", text="Intel")
 
@@ -783,7 +784,7 @@ def guimenu():
             print(str(k)+str(v))
             tree.insert("", index, text=str(k), value=(str(v), "Literal nonsense I hate python"))
             index += 1
-    tree.pack()
+    tree.pack(fill='x')
 
     entry1 = tkinter.Entry(window)
     entry1.pack()
